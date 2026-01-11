@@ -80,9 +80,8 @@ data/full/**/*.psv
 training_outputs/
 *_training.log
 
-# Model weights (if too large)
-# models/*/weights/*.pt
-# models/*/weights/*.json
+# Model weights (PyTorch binary files - downloaded at runtime)
+models/*/weights/*.pt
 
 # Loki Mode state (local only)
 .loki/

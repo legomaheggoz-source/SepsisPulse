@@ -7,6 +7,7 @@ handling weight management, inference, and interpretability features.
 The wrapper supports:
     - Weight loading/saving with validation
     - Demo mode when weights are unavailable
+    - Automatic weight download from GitHub releases
     - Batch prediction with threshold control
     - Attention weight extraction for interpretability
 """
@@ -19,6 +20,8 @@ import torch
 import torch.nn.functional as F
 from typing import Optional, Union
 from pathlib import Path
+import urllib.request
+import shutil
 
 from .architecture import TFTLite
 
@@ -49,6 +52,9 @@ class TFTLiteModel:
 
     # Default paths
     DEFAULT_WEIGHTS_PATH = 'models/tft_lite/weights/tft_lite_v1.pt'
+
+    # URL for downloading weights if not found locally (GitHub releases)
+    WEIGHTS_DOWNLOAD_URL = 'https://github.com/legomaheggoz-source/SepsisPulse/releases/download/v1.1.0/tft_lite_v1.pt'
 
     def __init__(
         self,
@@ -128,7 +134,7 @@ class TFTLiteModel:
         return device
 
     def _try_load_default_weights(self):
-        """Attempt to load weights from the default path."""
+        """Attempt to load weights from the default path or download if not found."""
         # Try multiple potential locations
         potential_paths = [
             self.DEFAULT_WEIGHTS_PATH,
@@ -144,8 +150,48 @@ class TFTLiteModel:
                 except Exception as e:
                     logger.warning(f"Failed to load weights from {path}: {e}")
 
+        # No local weights found - try to download
+        download_path = Path(__file__).parent / 'weights' / 'tft_lite_v1.pt'
+        if self._download_weights(download_path):
+            try:
+                self.load_weights(str(download_path))
+                return
+            except Exception as e:
+                logger.warning(f"Failed to load downloaded weights: {e}")
+
         # No weights found - enable demo mode
         self._enable_demo_mode()
+
+    def _download_weights(self, target_path: Path) -> bool:
+        """
+        Download pre-trained weights from GitHub releases.
+
+        Args:
+            target_path: Path to save the downloaded weights.
+
+        Returns:
+            True if download successful, False otherwise.
+        """
+        try:
+            logger.info(f"Downloading TFT-Lite weights from {self.WEIGHTS_DOWNLOAD_URL}...")
+
+            # Create directory if it doesn't exist
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Download with progress indication
+            with urllib.request.urlopen(self.WEIGHTS_DOWNLOAD_URL, timeout=60) as response:
+                with open(target_path, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+
+            logger.info(f"Successfully downloaded weights to {target_path}")
+            return True
+
+        except urllib.error.URLError as e:
+            logger.warning(f"Failed to download weights (network error): {e}")
+            return False
+        except Exception as e:
+            logger.warning(f"Failed to download weights: {e}")
+            return False
 
     def _enable_demo_mode(self):
         """Enable demo mode with random predictions."""
