@@ -176,4 +176,4 @@ Copyright 2026 SepsisPulse Contributors
 
 **Questions?** Open an [issue](https://github.com/legomaheggoz-source/SepsisPulse/issues) or reach out to the maintainers.
 
-**Version**: 1.1.0 | **Last Updated**: January 2026 | **Models**: Trained on PhysioNet 2019 (40,311 patients)
+**Version**: 1.1.1 | **Last Updated**: January 2026 | **Models**: Trained on PhysioNet 2019 (40,311 patients)
