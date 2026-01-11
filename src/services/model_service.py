@@ -116,9 +116,15 @@ class ModelService:
 
         Args:
             base_path: Base path for finding model weights.
-                      Defaults to current working directory.
+                      Defaults to repository root (detected from module location).
         """
-        self.base_path = Path(base_path) if base_path else Path.cwd()
+        if base_path:
+            self.base_path = Path(base_path)
+        else:
+            # Get repo root from module location: src/services/model_service.py -> repo root
+            self.base_path = Path(__file__).parent.parent.parent
+
+        logger.info(f"ModelService initialized with base_path: {self.base_path}")
         self._models: Dict[str, Any] = {}
         self._model_info: Dict[str, ModelInfo] = {}
         self._loaded = False
@@ -170,6 +176,8 @@ class ModelService:
             from models.xgboost_ts.xgboost_model import XGBoostTSModel
 
             weights_path = self.base_path / self.WEIGHT_PATHS["XGBoost-TS"]
+            logger.info(f"XGBoost weights path: {weights_path} (exists: {weights_path.exists()})")
+
             model = XGBoostTSModel(str(weights_path) if weights_path.exists() else None)
             self._models["XGBoost-TS"] = model
 
@@ -180,7 +188,7 @@ class ModelService:
                     weights_path=None,
                     performance={"note": "Demo mode - random predictions"},
                 )
-                logger.info("XGBoost-TS loaded in DEMO mode (no weights)")
+                logger.warning(f"XGBoost-TS loaded in DEMO mode - weights not found at {weights_path}")
             else:
                 # Load feature count from model
                 info = model.get_model_info()
@@ -209,6 +217,8 @@ class ModelService:
             from models.tft_lite.tft_model import TFTLiteModel
 
             weights_path = self.base_path / self.WEIGHT_PATHS["TFT-Lite"]
+            logger.info(f"TFT weights path: {weights_path} (exists: {weights_path.exists()})")
+
             model = TFTLiteModel(str(weights_path) if weights_path.exists() else None)
             self._models["TFT-Lite"] = model
 
@@ -219,7 +229,7 @@ class ModelService:
                     weights_path=None,
                     performance={"note": "Demo mode - untrained predictions"},
                 )
-                logger.info("TFT-Lite loaded in DEMO mode (no weights)")
+                logger.warning(f"TFT-Lite loaded in DEMO mode - weights not found at {weights_path}")
             else:
                 info = model.get_model_info()
                 self._model_info["TFT-Lite"] = ModelInfo(
