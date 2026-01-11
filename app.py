@@ -988,6 +988,15 @@ def render_patient_explorer():
             # Data source indicator
             data_src = patient_df.attrs.get("source", "unknown")
             st.caption(f"Source: {data_src}")
+
+            # Debug info expander
+            with st.expander("Data Debug Info"):
+                st.write(f"**DataFrame shape:** {patient_df.shape}")
+                st.write(f"**Columns:** {list(patient_df.columns)}")
+                for col in ["HR", "SBP", "Temp", "Resp"]:
+                    if col in patient_df.columns:
+                        non_null = patient_df[col].notna().sum()
+                        st.write(f"**{col}:** {non_null}/{len(patient_df)} values")
         else:
             st.markdown("**Age:** N/A")
             st.markdown("**Gender:** N/A")
@@ -1131,6 +1140,17 @@ def render_patient_explorer():
 
         # Legend for normal ranges
         st.caption("Green shaded areas indicate normal ranges. Red dashed line marks sepsis onset.")
+
+        # Show data table for transparency
+        with st.expander("View Raw Data"):
+            chart_data = pd.DataFrame({
+                "Hour": hours,
+                "HR (bpm)": hr,
+                "SBP (mmHg)": sbp,
+                "Temp (°C)": temp,
+                "Resp (/min)": resp,
+            })
+            st.dataframe(chart_data, use_container_width=True, hide_index=True)
 
     st.divider()
 
