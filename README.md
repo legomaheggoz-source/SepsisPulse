@@ -1,9 +1,21 @@
+---
+title: SepsisPulse
+emoji: 💓
+colorFrom: blue
+colorTo: cyan
+sdk: streamlit
+sdk_version: 1.29.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # 💓 SepsisPulse
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://huggingface.co/spaces)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://huggingface.co/spaces/legomaheggo/SepsisPulse)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![HuggingFace Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces)
+[![HuggingFace Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/legomaheggo/SepsisPulse)
 
 **Clinical Utility & Lead-Time Auditor for Sepsis Early Warning**
 
@@ -19,7 +31,7 @@ SepsisPulse is an interactive auditing platform that compares three mathematical
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/SepsisPulse.git
+git clone https://github.com/legomaheggoz-source/SepsisPulse.git
 cd SepsisPulse
 
 # Install dependencies
@@ -127,6 +139,6 @@ Copyright © 2026 SepsisPulse Contributors
 
 ---
 
-**Questions?** Open an [issue](https://github.com/yourusername/SepsisPulse/issues) or reach out to the maintainers.
+**Questions?** Open an [issue](https://github.com/legomaheggoz-source/SepsisPulse/issues) or reach out to the maintainers.
 
 **Version**: 0.1.0 | **Last Updated**: January 2026
