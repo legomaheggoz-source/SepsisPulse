@@ -1,0 +1,34 @@
+# SepsisPulse Streamlit Configuration
+# Aurora Solar-Inspired Dark Theme
+
+[theme]
+# Primary color for interactive elements
+primaryColor = "#00d9ff"
+
+# Background color for the main content area
+backgroundColor = "#0a0e17"
+
+# Background color for sidebar and other secondary areas
+secondaryBackgroundColor = "#002d42"
+
+# Color for text
+textColor = "#ffffff"
+
+# Font family
+font = "sans serif"
+
+[server]
+# Enable CORS for HuggingFace Spaces
+enableCORS = false
+enableXsrfProtection = false
+
+# Max upload size (MB)
+maxUploadSize = 50
+
+[browser]
+# Disable usage statistics
+gatherUsageStats = false
+
+[runner]
+# Faster rerun
+fastReruns = true

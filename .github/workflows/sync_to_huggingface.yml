@@ -1,0 +1,34 @@
+name: Sync to HuggingFace Spaces
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Configure git
+      run: |
+        git config --global user.email "ci@sepsis-pulse.local"
+        git config --global user.name "CI/CD Bot"
+
+    - name: Add HuggingFace remote
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: |
+        git remote add huggingface https://huggingface.co/spaces/legomaheggo/SepsisPulse.git
+        git remote set-url huggingface https://:${HF_TOKEN}@huggingface.co/spaces/legomaheggo/SepsisPulse.git
+
+    - name: Push to HuggingFace Spaces
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: |
+        git push huggingface main --force

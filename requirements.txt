@@ -1,0 +1,30 @@
+# SepsisPulse - Clinical Utility & Lead-Time Auditor
+# Requirements for HuggingFace Spaces (free tier, 2GB RAM limit)
+
+# Core Framework
+streamlit>=1.29.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Machine Learning
+xgboost>=1.7.0
+torch>=2.0.0,<2.2.0  # Pin to avoid HF compatibility issues
+scikit-learn>=1.2.0
+
+# Visualization
+plotly>=5.15.0
+altair>=5.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Development & Testing
+pytest>=7.3.0
+pytest-cov>=4.1.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.0.0

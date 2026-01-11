@@ -1,0 +1,226 @@
+{
+  "patient_count": 20,
+  "sepsis_count": 10,
+  "non_sepsis_count": 10,
+  "total_hours": 891,
+  "column_count": 41,
+  "column_list": [
+    "HR",
+    "O2Sat",
+    "Temp",
+    "SBP",
+    "MAP",
+    "DBP",
+    "Resp",
+    "EtCO2",
+    "BaseExcess",
+    "HCO3",
+    "FiO2",
+    "pH",
+    "PaCO2",
+    "SaO2",
+    "AST",
+    "BUN",
+    "Alkalinephos",
+    "Calcium",
+    "Chloride",
+    "Creatinine",
+    "Bilirubin_direct",
+    "Glucose",
+    "Lactate",
+    "Magnesium",
+    "Phosphate",
+    "Potassium",
+    "Bilirubin_total",
+    "TroponinI",
+    "Hct",
+    "Hgb",
+    "PTT",
+    "WBC",
+    "Fibrinogen",
+    "Platelets",
+    "Age",
+    "Gender",
+    "Unit1",
+    "Unit2",
+    "HospAdmTime",
+    "ICULOS",
+    "SepsisLabel"
+  ],
+  "column_categories": {
+    "vital_signs": [
+      "HR",
+      "O2Sat",
+      "Temp",
+      "SBP",
+      "MAP",
+      "DBP",
+      "Resp",
+      "EtCO2"
+    ],
+    "laboratory_values": [
+      "BaseExcess",
+      "HCO3",
+      "FiO2",
+      "pH",
+      "PaCO2",
+      "SaO2",
+      "AST",
+      "BUN",
+      "Alkalinephos",
+      "Calcium",
+      "Chloride",
+      "Creatinine",
+      "Bilirubin_direct",
+      "Glucose",
+      "Lactate",
+      "Magnesium",
+      "Phosphate",
+      "Potassium",
+      "Bilirubin_total",
+      "TroponinI",
+      "Hct",
+      "Hgb",
+      "PTT",
+      "WBC",
+      "Fibrinogen",
+      "Platelets"
+    ],
+    "demographics": [
+      "Age",
+      "Gender",
+      "Unit1",
+      "Unit2",
+      "HospAdmTime",
+      "ICULOS"
+    ],
+    "label": [
+      "SepsisLabel"
+    ]
+  },
+  "patients": [
+    {
+      "patient_id": "p00001",
+      "hours": 62,
+      "is_sepsis": true,
+      "onset_hour": 43
+    },
+    {
+      "patient_id": "p00002",
+      "hours": 43,
+      "is_sepsis": true,
+      "onset_hour": 24
+    },
+    {
+      "patient_id": "p00003",
+      "hours": 39,
+      "is_sepsis": true,
+      "onset_hour": 30
+    },
+    {
+      "patient_id": "p00004",
+      "hours": 52,
+      "is_sepsis": true,
+      "onset_hour": 31
+    },
+    {
+      "patient_id": "p00005",
+      "hours": 45,
+      "is_sepsis": true,
+      "onset_hour": 34
+    },
+    {
+      "patient_id": "p00006",
+      "hours": 68,
+      "is_sepsis": true,
+      "onset_hour": 43
+    },
+    {
+      "patient_id": "p00007",
+      "hours": 48,
+      "is_sepsis": true,
+      "onset_hour": 24
+    },
+    {
+      "patient_id": "p00008",
+      "hours": 35,
+      "is_sepsis": true,
+      "onset_hour": 24
+    },
+    {
+      "patient_id": "p00009",
+      "hours": 39,
+      "is_sepsis": true,
+      "onset_hour": 28
+    },
+    {
+      "patient_id": "p00010",
+      "hours": 71,
+      "is_sepsis": true,
+      "onset_hour": 35
+    },
+    {
+      "patient_id": "p00011",
+      "hours": 68,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00012",
+      "hours": 44,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00013",
+      "hours": 31,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00014",
+      "hours": 24,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00015",
+      "hours": 50,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00016",
+      "hours": 25,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00017",
+      "hours": 26,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00018",
+      "hours": 39,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00019",
+      "hours": 31,
+      "is_sepsis": false,
+      "onset_hour": null
+    },
+    {
+      "patient_id": "p00020",
+      "hours": 51,
+      "is_sepsis": false,
+      "onset_hour": null
+    }
+  ],
+  "data_format": "PSV (pipe-separated values)",
+  "missing_value_representation": "NaN",
+  "generation_seed": 42
+}

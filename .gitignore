@@ -1,0 +1,95 @@
+# SepsisPulse .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Environment variables - CRITICAL: Never commit secrets!
+.env
+.env.local
+.env.*.local
+*.env
+
+# HuggingFace Token - NEVER COMMIT!
+*hf_token*
+*huggingface_token*
+secrets.json
+
+# Data (large files - use Git LFS or exclude)
+data/full/
+*.psv
+*.csv.gz
+
+# Model weights (if too large)
+# models/*/weights/*.pt
+# models/*/weights/*.json
+
+# Loki Mode state (local only)
+.loki/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
