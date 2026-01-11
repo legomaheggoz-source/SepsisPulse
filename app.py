@@ -23,13 +23,38 @@ try:
     from src.visualization.theme import COLORS, apply_aurora_theme
     from src.visualization.components import metric_card, alert_banner, model_comparison_table
     from src.visualization.charts import create_roc_chart, create_lead_time_chart, create_utility_chart
-    from src.data.loader import load_dataset, get_sample_subset
+    from src.data.loader import load_dataset, get_sample_subset, load_patient, get_patient_ids
     from src.evaluation.clinical_utility import compute_utility_score
     from src.evaluation.lead_time import compute_average_lead_time
     from models import QSOFAModel, XGBoostTSModel, TFTLiteModel
     MODULES_LOADED = True
 except ImportError:
     MODULES_LOADED = False
+
+
+def init_session_state():
+    """Initialize session state with default configuration values."""
+    defaults = {
+        # Prediction thresholds
+        "qsofa_threshold": 2,
+        "xgboost_threshold": 0.5,
+        "tft_threshold": 0.5,
+        # Lead time settings
+        "optimal_lead_time": 6,
+        "max_lead_time": 12,
+        # Display settings
+        "show_confidence": True,
+        "show_all_patients": False,
+        "theme": "Aurora Light",
+        # Data settings - default to Full Dataset when trained models available
+        "data_source": "Full Dataset",
+        # Cached patient data
+        "_patient_ids_cache": None,
+        "_current_data_source": None,
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
 # Import model service for trained model integration
 try:
@@ -756,54 +781,165 @@ def render_model_comparison():
         """)
 
 
+def get_data_directory():
+    """Get the data directory based on current data source setting."""
+    data_source = st.session_state.get("data_source", "Full Dataset")
+    base_path = Path(__file__).parent
+
+    if data_source == "Full Dataset":
+        # Try PhysioNet data directories
+        possible_paths = [
+            base_path / "data" / "physionet" / "training_setA",
+            base_path / "data" / "physionet" / "training_setB",
+            Path("data/physionet/training_setA"),
+            Path("data/physionet/training_setB"),
+        ]
+        for path in possible_paths:
+            if path.exists() and list(path.glob("*.psv")):
+                return path
+        # Fall back to sample data if PhysioNet not available
+        return base_path / "data" / "sample" / "patients"
+    else:
+        # Sample subset
+        return base_path / "data" / "sample" / "patients"
+
+
+def get_available_patient_ids():
+    """Get list of available patient IDs based on data source setting."""
+    # Use cached patient IDs if available and data source hasn't changed
+    if (st.session_state._patient_ids_cache is not None and
+        st.session_state._current_data_source == st.session_state.data_source):
+        return st.session_state._patient_ids_cache
+
+    data_dir = get_data_directory()
+
+    try:
+        if data_dir.exists():
+            patient_ids = sorted([f.stem for f in data_dir.glob("*.psv")])
+            # Cache the results
+            st.session_state._patient_ids_cache = patient_ids
+            st.session_state._current_data_source = st.session_state.data_source
+            return patient_ids
+    except Exception as e:
+        st.warning(f"Could not load patient IDs: {e}")
+
+    # Fallback to sample IDs
+    return [f"p{i:05d}" for i in range(1, 21)]
+
+
+def load_patient_data(patient_id: str):
+    """Load actual patient data from file."""
+    data_dir = get_data_directory()
+    file_path = data_dir / f"{patient_id}.psv"
+
+    try:
+        if file_path.exists() and MODULES_LOADED:
+            return load_patient(str(file_path))
+    except Exception as e:
+        st.warning(f"Could not load patient data: {e}")
+
+    return None
+
+
 def render_patient_explorer():
-    """Render patient explorer page."""
+    """Render patient explorer page with real patient data."""
     st.markdown(AURORA_CSS, unsafe_allow_html=True)
 
     st.title("Patient Explorer")
     st.markdown("Explore individual patient predictions and vital signs")
 
+    # Show current data source
+    data_source = st.session_state.get("data_source", "Full Dataset")
+    st.info(f"**Data Source:** {data_source} | Change in Configuration tab")
+
+    # Get available patient IDs
+    patient_ids = get_available_patient_ids()
+
+    if not patient_ids:
+        st.error("No patient data available. Please check the Configuration tab.")
+        return
+
     # Patient selector
     col1, col2 = st.columns([1, 3])
 
     with col1:
+        st.markdown(f"**Available Patients:** {len(patient_ids):,}")
+
         patient_id = st.selectbox(
             "Select Patient",
-            [f"p{i:05d}" for i in range(1, 21)],
+            patient_ids,
+            key="patient_explorer_select"
         )
+
+        # Load actual patient data
+        patient_df = load_patient_data(patient_id)
 
         st.markdown("### Patient Info")
         st.markdown(f"**ID:** {patient_id}")
-        st.markdown(f"**Age:** {np.random.randint(45, 85)}")
-        st.markdown(f"**Gender:** {'M' if np.random.random() > 0.5 else 'F'}")
-        st.markdown(f"**ICU Stay:** {np.random.randint(24, 168)}h")
 
-        has_sepsis = np.random.random() > 0.85
-        if has_sepsis:
-            st.error("Sepsis Positive")
+        if patient_df is not None and not patient_df.empty:
+            # Extract real demographics from data
+            age = patient_df["Age"].iloc[0] if "Age" in patient_df.columns else "N/A"
+            gender = "M" if patient_df["Gender"].iloc[0] == 1 else "F" if "Gender" in patient_df.columns else "N/A"
+            icu_hours = len(patient_df)
+            has_sepsis = patient_df["SepsisLabel"].max() > 0 if "SepsisLabel" in patient_df.columns else False
+
+            st.markdown(f"**Age:** {int(age) if age != 'N/A' else age}")
+            st.markdown(f"**Gender:** {gender}")
+            st.markdown(f"**ICU Stay:** {icu_hours}h")
+
+            if has_sepsis:
+                sepsis_onset = patient_df[patient_df["SepsisLabel"] == 1].index[0] if has_sepsis else None
+                st.error(f"Sepsis Positive (onset: hour {sepsis_onset})")
+            else:
+                st.success("No Sepsis")
         else:
-            st.success("No Sepsis")
+            st.markdown("**Age:** N/A")
+            st.markdown("**Gender:** N/A")
+            st.markdown("**ICU Stay:** N/A")
+            st.warning("Patient data not available")
 
     with col2:
-        # Generate demo vitals
-        hours = np.arange(0, 48)
-        hr = 80 + np.random.randn(48).cumsum() * 2
-        sbp = 120 + np.random.randn(48).cumsum() * 3
-        temp = 37 + np.random.randn(48).cumsum() * 0.1
-        resp = 16 + np.random.randn(48).cumsum() * 0.5
-
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
 
+        if patient_df is not None and not patient_df.empty:
+            # Use actual patient vitals
+            hours = np.arange(len(patient_df))
+
+            # Extract vitals with forward-fill for missing values
+            hr = patient_df["HR"].ffill().bfill().values if "HR" in patient_df.columns else np.full(len(patient_df), np.nan)
+            sbp = patient_df["SBP"].ffill().bfill().values if "SBP" in patient_df.columns else np.full(len(patient_df), np.nan)
+            temp = patient_df["Temp"].ffill().bfill().values if "Temp" in patient_df.columns else np.full(len(patient_df), np.nan)
+            resp = patient_df["Resp"].ffill().bfill().values if "Resp" in patient_df.columns else np.full(len(patient_df), np.nan)
+
+            chart_title = "Actual Patient Vitals"
+        else:
+            # Fallback to demo data if patient data unavailable
+            hours = np.arange(0, 48)
+            np.random.seed(hash(patient_id) % 1000)
+            hr = 80 + np.random.randn(48).cumsum() * 2
+            sbp = 120 + np.random.randn(48).cumsum() * 3
+            temp = 37 + np.random.randn(48).cumsum() * 0.1
+            resp = 16 + np.random.randn(48).cumsum() * 0.5
+            chart_title = "Simulated Vitals (data unavailable)"
+
         fig = make_subplots(
             rows=2, cols=2,
-            subplot_titles=("Heart Rate", "Blood Pressure", "Temperature", "Respiratory Rate"),
+            subplot_titles=("Heart Rate (bpm)", "Systolic BP (mmHg)", "Temperature (°C)", "Respiratory Rate (/min)"),
         )
 
-        fig.add_trace(go.Scatter(x=hours, y=hr, name="HR", line=dict(color="#0966d2")), row=1, col=1)
-        fig.add_trace(go.Scatter(x=hours, y=sbp, name="SBP", line=dict(color="#1a7f37")), row=1, col=2)
-        fig.add_trace(go.Scatter(x=hours, y=temp, name="Temp", line=dict(color="#b08500")), row=2, col=1)
-        fig.add_trace(go.Scatter(x=hours, y=resp, name="Resp", line=dict(color="#da3633")), row=2, col=2)
+        fig.add_trace(go.Scatter(x=hours, y=hr, name="HR", line=dict(color="#0966d2"), mode='lines+markers', marker=dict(size=3)), row=1, col=1)
+        fig.add_trace(go.Scatter(x=hours, y=sbp, name="SBP", line=dict(color="#1a7f37"), mode='lines+markers', marker=dict(size=3)), row=1, col=2)
+        fig.add_trace(go.Scatter(x=hours, y=temp, name="Temp", line=dict(color="#b08500"), mode='lines+markers', marker=dict(size=3)), row=2, col=1)
+        fig.add_trace(go.Scatter(x=hours, y=resp, name="Resp", line=dict(color="#da3633"), mode='lines+markers', marker=dict(size=3)), row=2, col=2)
+
+        # Add sepsis onset marker if applicable
+        if patient_df is not None and not patient_df.empty:
+            if "SepsisLabel" in patient_df.columns and patient_df["SepsisLabel"].max() > 0:
+                sepsis_idx = patient_df[patient_df["SepsisLabel"] == 1].index[0]
+                for row, col in [(1, 1), (1, 2), (2, 1), (2, 2)]:
+                    fig.add_vline(x=sepsis_idx, line_dash="dash", line_color="red", row=row, col=col)
 
         fig.update_layout(
             height=500,
@@ -812,7 +948,12 @@ def render_patient_explorer():
             plot_bgcolor='#f8fafb',
             font=dict(color='#24292f'),
             showlegend=False,
+            title=dict(text=chart_title, x=0.5, font=dict(size=14)),
         )
+
+        # Update x-axes labels
+        fig.update_xaxes(title_text="Hour", row=2, col=1)
+        fig.update_xaxes(title_text="Hour", row=2, col=2)
 
         st.plotly_chart(fig, use_container_width=True)
 
@@ -823,7 +964,11 @@ def render_patient_explorer():
 
     col1, col2, col3 = st.columns(3)
 
+    # Use deterministic predictions based on patient ID for consistency
     np.random.seed(hash(patient_id) % 100)
+
+    # If we have real data and trained models, could run actual predictions here
+    # For now, use consistent demo predictions based on patient ID
     predictions = {
         "qSOFA": np.random.random() * 0.6,
         "XGBoost-TS": np.random.random() * 0.8,
@@ -855,7 +1000,7 @@ def render_patient_explorer():
 
 
 def render_configuration():
-    """Render configuration page."""
+    """Render configuration page with persistent session state."""
     st.markdown(AURORA_CSS, unsafe_allow_html=True)
 
     st.title("Configuration")
@@ -866,39 +1011,120 @@ def render_configuration():
     with col1:
         st.markdown("### Prediction Thresholds")
 
-        qsofa_threshold = st.slider("qSOFA Threshold", 1, 3, 2)
-        xgboost_threshold = st.slider("XGBoost-TS Threshold", 0.0, 1.0, 0.5, 0.05)
-        tft_threshold = st.slider("TFT-Lite Threshold", 0.0, 1.0, 0.5, 0.05)
+        st.session_state.qsofa_threshold = st.slider(
+            "qSOFA Threshold", 1, 3,
+            value=st.session_state.qsofa_threshold,
+            key="qsofa_threshold_slider"
+        )
+        st.session_state.xgboost_threshold = st.slider(
+            "XGBoost-TS Threshold", 0.0, 1.0,
+            value=st.session_state.xgboost_threshold,
+            step=0.05,
+            key="xgboost_threshold_slider"
+        )
+        st.session_state.tft_threshold = st.slider(
+            "TFT-Lite Threshold", 0.0, 1.0,
+            value=st.session_state.tft_threshold,
+            step=0.05,
+            key="tft_threshold_slider"
+        )
 
         st.markdown("### Lead Time Settings")
-        optimal_lead = st.slider("Optimal Lead Time (hours)", 1, 12, 6)
-        max_lead = st.slider("Maximum Lead Time (hours)", 6, 24, 12)
+        st.session_state.optimal_lead_time = st.slider(
+            "Optimal Lead Time (hours)", 1, 12,
+            value=st.session_state.optimal_lead_time,
+            key="optimal_lead_slider"
+        )
+        st.session_state.max_lead_time = st.slider(
+            "Maximum Lead Time (hours)", 6, 24,
+            value=st.session_state.max_lead_time,
+            key="max_lead_slider"
+        )
 
     with col2:
         st.markdown("### Display Settings")
 
-        show_confidence = st.checkbox("Show Confidence Intervals", value=True)
-        show_all_patients = st.checkbox("Include All Patients", value=False)
-        theme = st.selectbox("Color Theme", ["Aurora Light", "Aurora Dark", "Clinical"])
+        st.session_state.show_confidence = st.checkbox(
+            "Show Confidence Intervals",
+            value=st.session_state.show_confidence,
+            key="show_confidence_checkbox"
+        )
+        st.session_state.show_all_patients = st.checkbox(
+            "Include All Patients",
+            value=st.session_state.show_all_patients,
+            key="show_all_patients_checkbox"
+        )
+        theme_options = ["Aurora Light", "Aurora Dark", "Clinical"]
+        st.session_state.theme = st.selectbox(
+            "Color Theme",
+            theme_options,
+            index=theme_options.index(st.session_state.theme),
+            key="theme_selectbox"
+        )
 
         st.markdown("### Data Settings")
 
-        data_source = st.selectbox("Data Source", ["Sample Subset (1000)", "Full Dataset", "Custom Upload"])
+        data_options = ["Sample Subset (20)", "Full Dataset (40,311)", "Custom Upload"]
+        # Map current session state to display option
+        current_source = st.session_state.data_source
+        if current_source == "Full Dataset":
+            current_index = 1
+        elif current_source == "Custom Upload":
+            current_index = 2
+        else:
+            current_index = 0
 
-        if data_source == "Custom Upload":
+        selected_source = st.selectbox(
+            "Data Source",
+            data_options,
+            index=current_index,
+            key="data_source_selectbox"
+        )
+
+        # Map display option back to internal value
+        if "Full Dataset" in selected_source:
+            st.session_state.data_source = "Full Dataset"
+        elif "Custom Upload" in selected_source:
+            st.session_state.data_source = "Custom Upload"
+        else:
+            st.session_state.data_source = "Sample Subset"
+
+        if st.session_state.data_source == "Custom Upload":
             uploaded = st.file_uploader("Upload PSV files", type=["psv", "csv"])
 
+        # Clear patient cache when data source changes
+        if st.session_state._current_data_source != st.session_state.data_source:
+            st.session_state._patient_ids_cache = None
+            st.session_state._current_data_source = st.session_state.data_source
+
     st.divider()
+
+    # Show current settings summary
+    st.markdown("### Current Settings Summary")
+    st.info(f"**Data Source:** {st.session_state.data_source} | "
+            f"**XGBoost Threshold:** {st.session_state.xgboost_threshold:.2f} | "
+            f"**TFT Threshold:** {st.session_state.tft_threshold:.2f}")
 
     col1, col2, col3 = st.columns([1, 1, 2])
 
     with col1:
         if st.button("Save Settings", use_container_width=True):
-            st.success("Settings saved!")
+            st.success("Settings saved! Changes will persist during this session.")
 
     with col2:
         if st.button("Reset Defaults", use_container_width=True):
-            st.info("Settings reset to defaults")
+            # Reset all settings to defaults
+            st.session_state.qsofa_threshold = 2
+            st.session_state.xgboost_threshold = 0.5
+            st.session_state.tft_threshold = 0.5
+            st.session_state.optimal_lead_time = 6
+            st.session_state.max_lead_time = 12
+            st.session_state.show_confidence = True
+            st.session_state.show_all_patients = False
+            st.session_state.theme = "Aurora Light"
+            st.session_state.data_source = "Full Dataset"
+            st.session_state._patient_ids_cache = None
+            st.rerun()
 
 
 def render_documentation():
@@ -1065,6 +1291,9 @@ def render_documentation():
 
 def main():
     """Main application entry point."""
+    # Initialize session state with defaults
+    init_session_state()
+
     page = render_sidebar()
 
     if page == "Dashboard":
