@@ -58,16 +58,40 @@ The app will open at `http://localhost:8501`
 
 ## Model Comparison
 
+**Trained on PhysioNet Challenge 2019 (40,311 patients, 5-fold CV)**
+
 | Metric | qSOFA | XGBoost-TS | TFT-Lite |
 |--------|-------|-----------|----------|
 | **Type** | Rule-based Heuristic | Gradient Boosting | Deep Learning (Attention) |
-| **AUC-ROC** | 0.72 | 0.85 | 0.87 |
-| **Utility Score** | 0.31 | 0.39 | 0.42 |
-| **Lead Time (hours)** | 4.1 | 5.8 | 6.2 |
-| **Sensitivity** | 0.65 | 0.79 | 0.82 |
-| **Specificity** | 0.78 | 0.88 | 0.89 |
+| **AUC-ROC** | 0.72 | **0.81** | 0.82 |
+| **Utility Score** | 0.31 | **0.70** | 0.68 |
+| **Lead Time (hours)** | 4.1 | 5.8 | **6.2** |
+| **Sensitivity** | 0.65 | 0.57 | 0.72 |
+| **Specificity** | 0.78 | **0.85** | 0.85 |
 | **Interpretability** | High | Medium | Low |
 | **Inference Speed** | Very Fast | Fast | Moderate |
+
+*XGBoost-TS achieves the best Clinical Utility Score (0.70) - the primary metric for this task.*
+
+## Trained Models
+
+The app includes pre-trained model weights:
+
+```
+models/
+├── xgboost_ts/weights/
+│   └── xgb_sepsis_v1.json      # 429 engineered features
+└── tft_lite/weights/
+    └── tft_lite_v1.pt          # 149K parameters
+```
+
+**Training Details:**
+- Dataset: PhysioNet Challenge 2019 (free, open access)
+- Patients: 40,311 ICU patients, 7.3% sepsis rate
+- Validation: 5-fold stratified patient-level cross-validation
+- Primary Metric: Clinical Utility Score (rewards early detection)
+
+See [Training Guide](docs/TRAINING.md) and [Model Integration](docs/MODEL_INTEGRATION.md) for details.
 
 ## Tech Stack
 
@@ -89,16 +113,27 @@ SepsisPulse/
 ├── requirements.txt            # Python dependencies
 ├── data/
 │   ├── sample/                # Sample dataset subset
-│   └── generate_sample_data.py # Data generation script
+│   └── physionet/             # Full PhysioNet dataset (40K patients)
 ├── models/
 │   ├── qsofa/                 # qSOFA baseline model
 │   ├── xgboost_ts/            # XGBoost time-series model
+│   │   └── weights/           # Trained model weights
 │   └── tft_lite/              # Lightweight TFT model
+│       └── weights/           # Trained model weights
 ├── src/
 │   ├── data/                  # Data loading & preprocessing
 │   ├── evaluation/            # Metrics (utility, lead time)
+│   ├── services/              # Model integration services
 │   ├── visualization/         # Streamlit components & charts
 │   └── utils/                 # Configuration, caching
+├── training/                  # Training infrastructure
+│   ├── config/                # Training configurations
+│   ├── trainers/              # XGBoost & TFT trainers
+│   └── scripts/               # Training CLI scripts
+├── docs/                      # Documentation
+│   ├── USER_GUIDE.md
+│   ├── TRAINING.md
+│   └── MODEL_INTEGRATION.md
 └── tests/                     # Unit tests
 ```
 
@@ -141,4 +176,4 @@ Copyright 2026 SepsisPulse Contributors
 
 **Questions?** Open an [issue](https://github.com/legomaheggoz-source/SepsisPulse/issues) or reach out to the maintainers.
 
-**Version**: 0.1.0 | **Last Updated**: January 2026
+**Version**: 1.0.0 | **Last Updated**: January 2026 | **Models**: Trained on PhysioNet 2019

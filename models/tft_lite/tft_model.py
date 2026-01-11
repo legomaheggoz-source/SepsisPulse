@@ -54,13 +54,13 @@ class TFTLiteModel:
         self,
         weights_path: Optional[str] = None,
         device: str = 'cpu',
-        input_size: int = 41,
-        hidden_size: int = 32,
-        lstm_layers: int = 1,
-        attention_heads: int = 2,
+        input_size: int = 39,  # PhysioNet 2019 features
+        hidden_size: int = 64,  # Matches trained model
+        lstm_layers: int = 2,  # Matches trained model
+        attention_heads: int = 4,  # Matches trained model
         output_size: int = 1,
         dropout: float = 0.1,
-        max_seq_length: int = 24
+        max_seq_length: int = 72  # Matches trained model
     ):
         """
         Initialize the TFT-Lite model wrapper.

@@ -70,10 +70,15 @@ secrets.json
 
 # Data (large files - use Git LFS or exclude)
 data/full/
+data/physionet/
 *.csv.gz
 
 # PSV files in full data are ignored, sample data is tracked
 data/full/**/*.psv
+
+# Training outputs (local only, not needed for deployment)
+training_outputs/
+*_training.log
 
 # Model weights (if too large)
 # models/*/weights/*.pt

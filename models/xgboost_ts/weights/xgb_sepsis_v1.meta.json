@@ -1,0 +1,50 @@
+{
+  "epoch": 69,
+  "fold": 4,
+  "metric_name": "utility",
+  "metric_value": 0.7049689683926613,
+  "timestamp": "2026-01-11T13:02:49.035085",
+  "config": {
+    "data_dir": "data\\physionet",
+    "output_dir": "training_outputs\\xgboost_full",
+    "n_folds": 5,
+    "random_seed": 42,
+    "max_patients": null,
+    "use_class_weights": true,
+    "primary_metric": "utility",
+    "checkpoint_every_epoch": 1,
+    "keep_best_only": true,
+    "early_stopping_patience": 10,
+    "early_stopping_min_delta": 0.001,
+    "log_level": "INFO",
+    "use_tensorboard": false,
+    "use_wandb": false,
+    "wandb_project": null,
+    "lag_hours": [
+      1,
+      3,
+      6
+    ],
+    "rolling_hours": [
+      3,
+      6,
+      12
+    ],
+    "include_deltas": true,
+    "include_rolling_stats": true,
+    "n_estimators": 500,
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "min_child_weight": 1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "gamma": 0.0,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "scale_pos_weight": 54.573553126679805,
+    "tree_method": "hist",
+    "device": "cuda",
+    "xgb_early_stopping_rounds": 50,
+    "save_format": "json"
+  }
+}
