@@ -70,8 +70,10 @@ secrets.json
 
 # Data (large files - use Git LFS or exclude)
 data/full/
-*.psv
 *.csv.gz
+
+# PSV files in full data are ignored, sample data is tracked
+data/full/**/*.psv
 
 # Model weights (if too large)
 # models/*/weights/*.pt

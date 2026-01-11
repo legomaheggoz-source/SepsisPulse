@@ -1,18 +1,18 @@
 # SepsisPulse Streamlit Configuration
-# Aurora Solar-Inspired Dark Theme
+# Aurora Solar-Inspired Light Theme (Professional Clinical Dashboard)
 
 [theme]
-# Primary color for interactive elements
-primaryColor = "#00d9ff"
+# Primary color for interactive elements (medical blue)
+primaryColor = "#0966d2"
 
-# Background color for the main content area
-backgroundColor = "#0a0e17"
+# Background color for the main content area (clean light)
+backgroundColor = "#f8fafb"
 
-# Background color for sidebar and other secondary areas
-secondaryBackgroundColor = "#002d42"
+# Background color for sidebar and other secondary areas (white cards)
+secondaryBackgroundColor = "#ffffff"
 
-# Color for text
-textColor = "#ffffff"
+# Color for text (dark for readability)
+textColor = "#24292f"
 
 # Font family
 font = "sans serif"

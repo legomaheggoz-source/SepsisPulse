@@ -13,7 +13,7 @@ from pathlib import Path
 # Configure page - must be first Streamlit command
 st.set_page_config(
     page_title="SepsisPulse",
-    page_icon="💓",
+    page_icon="favicon.ico",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -32,23 +32,23 @@ except ImportError:
     MODULES_LOADED = False
 
 # ============================================================================
-# AURORA THEME CSS
+# AURORA THEME CSS - Light Theme (Aurora Solar-Inspired)
 # ============================================================================
 
 AURORA_CSS = """
 <style>
-/* Aurora Solar-Inspired Dark Theme */
+/* Aurora Solar-Inspired Light Theme */
 :root {
-    --background: #0a0e17;
-    --card-bg: #002d42;
-    --card-border: #004466;
-    --primary: #00d9ff;
-    --secondary: #7c3aed;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
+    --background: #f8fafb;
+    --card-bg: #ffffff;
+    --card-border: #e0e4e8;
+    --primary: #0966d2;
+    --secondary: #6e7681;
+    --success: #1a7f37;
+    --warning: #b08500;
+    --danger: #da3633;
+    --text-primary: #24292f;
+    --text-secondary: #57606a;
 }
 
 /* Main container */
@@ -59,11 +59,11 @@ AURORA_CSS = """
 
 /* Metric cards */
 div[data-testid="metric-container"] {
-    background: linear-gradient(135deg, var(--card-bg) 0%, #001a2e 100%);
+    background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: 12px;
     padding: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 div[data-testid="metric-container"] label {
@@ -79,7 +79,7 @@ div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
 
 /* Sidebar styling */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, var(--card-bg) 0%, #001a2e 100%);
+    background: var(--card-bg);
     border-right: 1px solid var(--card-border);
 }
 
@@ -93,35 +93,36 @@ h1, h2, h3 {
 }
 
 h1 {
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--primary) !important;
+    font-weight: 700;
 }
 
 /* Alert banner */
 .alert-critical {
-    background: linear-gradient(90deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    background: rgba(218, 54, 51, 0.08);
     border-left: 4px solid var(--danger);
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1rem;
+    color: var(--text-primary);
 }
 
 .alert-warning {
-    background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    background: rgba(176, 133, 0, 0.08);
     border-left: 4px solid var(--warning);
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1rem;
+    color: var(--text-primary);
 }
 
 .alert-success {
-    background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+    background: rgba(26, 127, 55, 0.08);
     border-left: 4px solid var(--success);
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1rem;
+    color: var(--text-primary);
 }
 
 /* Model comparison table */
@@ -136,7 +137,7 @@ h1 {
 
 .model-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 217, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(9, 102, 210, 0.15);
 }
 
 .model-name {
@@ -173,7 +174,7 @@ h1 {
 
 /* Buttons */
 .stButton > button {
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: var(--primary);
     color: white;
     border: none;
     border-radius: 8px;
@@ -196,11 +197,14 @@ h1 {
     border-radius: 8px 8px 0 0;
     padding: 0.5rem 1.5rem;
     color: var(--text-secondary);
+    border: 1px solid var(--card-border);
+    border-bottom: none;
 }
 
 .stTabs [aria-selected="true"] {
     background: var(--primary);
     color: white;
+    border-color: var(--primary);
 }
 </style>
 """
@@ -250,13 +254,13 @@ DEMO_SEPSIS_CASES = 127
 def render_sidebar():
     """Render the sidebar navigation."""
     with st.sidebar:
-        st.markdown("## 💓 SepsisPulse")
+        st.markdown("## SepsisPulse")
         st.markdown("*Clinical Utility Auditor*")
         st.divider()
 
         page = st.radio(
             "Navigation",
-            ["📊 Dashboard", "📈 Model Comparison", "🔍 Patient Explorer", "⚙️ Configuration", "📖 Documentation"],
+            ["Dashboard", "Model Comparison", "Patient Explorer", "Configuration", "Documentation"],
             label_visibility="collapsed",
         )
 
@@ -264,9 +268,9 @@ def render_sidebar():
 
         # Status indicator
         if MODULES_LOADED:
-            st.success("✓ All modules loaded")
+            st.success("All modules loaded")
         else:
-            st.warning("⚠ Demo mode (modules not loaded)")
+            st.warning("Demo mode (modules not loaded)")
 
         st.divider()
 
@@ -294,7 +298,7 @@ def render_dashboard():
     st.markdown(
         """
         <div class="alert-warning">
-            <strong>📊 Demo Mode</strong> - Showing simulated metrics.
+            <strong>Demo Mode</strong> - Showing simulated metrics.
             Load real patient data to see actual predictions.
         </div>
         """,
@@ -345,39 +349,39 @@ def render_dashboard():
     for col, (model_name, metrics) in zip([col1, col2, col3], DEMO_METRICS.items()):
         with col:
             is_best = metrics["utility"] == best_utility
-            border_color = "#00d9ff" if is_best else "#004466"
+            border_color = "#0966d2" if is_best else "#e0e4e8"
 
             st.markdown(
                 f"""
                 <div style="
-                    background: linear-gradient(135deg, #002d42 0%, #001a2e 100%);
+                    background: #ffffff;
                     border: 2px solid {border_color};
                     border-radius: 12px;
                     padding: 1.5rem;
                     text-align: center;
-                    {'box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);' if is_best else ''}
+                    {'box-shadow: 0 4px 12px rgba(9, 102, 210, 0.15);' if is_best else 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);'}
                 ">
-                    <div style="color: #00d9ff; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">
+                    <div style="color: #0966d2; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">
                         {model_name}
                     </div>
-                    <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 1rem;">
+                    <div style="color: #57606a; font-size: 0.8rem; margin-bottom: 1rem;">
                         {metrics['type']}
                     </div>
                     <div style="display: grid; gap: 0.75rem;">
                         <div>
-                            <div style="color: #94a3b8; font-size: 0.75rem;">AUC-ROC</div>
-                            <div style="color: white; font-size: 1.5rem; font-weight: 700;">{metrics['auc']:.2f}</div>
+                            <div style="color: #57606a; font-size: 0.75rem;">AUC-ROC</div>
+                            <div style="color: #24292f; font-size: 1.5rem; font-weight: 700;">{metrics['auc']:.2f}</div>
                         </div>
                         <div>
-                            <div style="color: #94a3b8; font-size: 0.75rem;">Utility Score</div>
-                            <div style="color: #10b981; font-size: 1.5rem; font-weight: 700;">{metrics['utility']:.2f}</div>
+                            <div style="color: #57606a; font-size: 0.75rem;">Utility Score</div>
+                            <div style="color: #1a7f37; font-size: 1.5rem; font-weight: 700;">{metrics['utility']:.2f}</div>
                         </div>
                         <div>
-                            <div style="color: #94a3b8; font-size: 0.75rem;">Lead Time</div>
-                            <div style="color: #f59e0b; font-size: 1.5rem; font-weight: 700;">{metrics['lead_time']:.1f}h</div>
+                            <div style="color: #57606a; font-size: 0.75rem;">Lead Time</div>
+                            <div style="color: #b08500; font-size: 1.5rem; font-weight: 700;">{metrics['lead_time']:.1f}h</div>
                         </div>
                     </div>
-                    {'<div style="margin-top: 1rem; color: #00d9ff; font-size: 0.8rem;">⭐ BEST</div>' if is_best else ''}
+                    {'<div style="margin-top: 1rem; color: #0966d2; font-size: 0.8rem; font-weight: 600;">BEST</div>' if is_best else ''}
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -388,7 +392,7 @@ def render_dashboard():
     # Charts section
     st.markdown("### Performance Analysis")
 
-    tab1, tab2, tab3 = st.tabs(["📈 ROC Curves", "⏱️ Lead Time Distribution", "📊 Utility Over Time"])
+    tab1, tab2, tab3 = st.tabs(["ROC Curves", "Lead Time Distribution", "Utility Over Time"])
 
     with tab1:
         # Placeholder ROC curve
@@ -398,6 +402,7 @@ def render_dashboard():
 
         # Random walk for demo ROC curves
         np.random.seed(42)
+        colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
         for model_name, metrics in DEMO_METRICS.items():
             fpr = np.linspace(0, 1, 100)
             # Generate plausible TPR based on AUC
@@ -410,7 +415,7 @@ def render_dashboard():
                 y=tpr,
                 mode='lines',
                 name=f"{model_name} (AUC={metrics['auc']:.2f})",
-                line=dict(width=2),
+                line=dict(width=2, color=colors[model_name]),
             ))
 
         # Diagonal reference line
@@ -419,17 +424,17 @@ def render_dashboard():
             y=[0, 1],
             mode='lines',
             name='Random',
-            line=dict(dash='dash', color='gray'),
+            line=dict(dash='dash', color='#d0d7de'),
         ))
 
         fig.update_layout(
             title="ROC Curves - Model Comparison",
             xaxis_title="False Positive Rate",
             yaxis_title="True Positive Rate",
-            template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(10,14,23,1)',
-            font=dict(color='white'),
+            template="plotly_white",
+            paper_bgcolor='#ffffff',
+            plot_bgcolor='#f8fafb',
+            font=dict(color='#24292f'),
             legend=dict(x=0.6, y=0.1),
             height=400,
         )
@@ -440,6 +445,7 @@ def render_dashboard():
         # Lead time distribution
         fig = go.Figure()
 
+        colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
         for model_name, metrics in DEMO_METRICS.items():
             # Generate plausible lead time distribution
             lead_times = np.random.exponential(metrics["lead_time"], 200)
@@ -450,22 +456,23 @@ def render_dashboard():
                 name=model_name,
                 opacity=0.7,
                 nbinsx=24,
+                marker_color=colors[model_name],
             ))
 
         fig.update_layout(
             title="Lead Time Distribution (hours before sepsis onset)",
             xaxis_title="Lead Time (hours)",
             yaxis_title="Count",
-            template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(10,14,23,1)',
-            font=dict(color='white'),
+            template="plotly_white",
+            paper_bgcolor='#ffffff',
+            plot_bgcolor='#f8fafb',
+            font=dict(color='#24292f'),
             barmode='overlay',
             height=400,
         )
 
         # Add vertical line at 6h optimal
-        fig.add_vline(x=6, line_dash="dash", line_color="#00d9ff",
+        fig.add_vline(x=6, line_dash="dash", line_color="#0966d2",
                       annotation_text="Optimal (6h)")
 
         st.plotly_chart(fig, use_container_width=True)
@@ -475,6 +482,7 @@ def render_dashboard():
         fig = go.Figure()
 
         thresholds = np.linspace(0.1, 0.9, 50)
+        colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
 
         for model_name, metrics in DEMO_METRICS.items():
             # Generate plausible utility curve
@@ -487,17 +495,17 @@ def render_dashboard():
                 y=utility,
                 mode='lines',
                 name=model_name,
-                line=dict(width=2),
+                line=dict(width=2, color=colors[model_name]),
             ))
 
         fig.update_layout(
             title="Utility Score vs. Decision Threshold",
             xaxis_title="Prediction Threshold",
             yaxis_title="Clinical Utility Score",
-            template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(10,14,23,1)',
-            font=dict(color='white'),
+            template="plotly_white",
+            paper_bgcolor='#ffffff',
+            plot_bgcolor='#f8fafb',
+            font=dict(color='#24292f'),
             height=400,
         )
 
@@ -508,7 +516,7 @@ def render_model_comparison():
     """Render detailed model comparison page."""
     st.markdown(AURORA_CSS, unsafe_allow_html=True)
 
-    st.title("📈 Model Comparison")
+    st.title("Model Comparison")
     st.markdown("Detailed comparison of sepsis prediction approaches")
 
     # Metrics table
@@ -519,7 +527,7 @@ def render_model_comparison():
     df.columns = ["Model", "Type", "AUC-ROC", "Utility Score", "Lead Time (h)", "Sensitivity", "Specificity"]
 
     st.dataframe(
-        df.style.highlight_max(subset=["AUC-ROC", "Utility Score", "Lead Time (h)", "Sensitivity", "Specificity"], color='#10b981'),
+        df.style.highlight_max(subset=["AUC-ROC", "Utility Score", "Lead Time (h)", "Sensitivity", "Specificity"], color='#c8e6c9'),
         use_container_width=True,
         hide_index=True,
     )
@@ -538,11 +546,11 @@ def render_model_comparison():
         **Type:** Rule-based heuristic (Sepsis-3 guidelines)
 
         **Variables:**
-        - Respiratory Rate ≥ 22 breaths/min (+1 point)
-        - Systolic BP ≤ 100 mmHg (+1 point)
+        - Respiratory Rate >= 22 breaths/min (+1 point)
+        - Systolic BP <= 100 mmHg (+1 point)
         - Altered mentation / GCS < 15 (+1 point)
 
-        **Decision Rule:** Score ≥ 2 indicates high sepsis risk
+        **Decision Rule:** Score >= 2 indicates high sepsis risk
 
         **Pros:**
         - Simple, interpretable
@@ -614,7 +622,7 @@ def render_patient_explorer():
     """Render patient explorer page."""
     st.markdown(AURORA_CSS, unsafe_allow_html=True)
 
-    st.title("🔍 Patient Explorer")
+    st.title("Patient Explorer")
     st.markdown("Explore individual patient predictions and vital signs")
 
     # Patient selector
@@ -634,9 +642,9 @@ def render_patient_explorer():
 
         has_sepsis = np.random.random() > 0.85
         if has_sepsis:
-            st.error("⚠️ Sepsis Positive")
+            st.error("Sepsis Positive")
         else:
-            st.success("✓ No Sepsis")
+            st.success("No Sepsis")
 
     with col2:
         # Generate demo vitals
@@ -654,17 +662,17 @@ def render_patient_explorer():
             subplot_titles=("Heart Rate", "Blood Pressure", "Temperature", "Respiratory Rate"),
         )
 
-        fig.add_trace(go.Scatter(x=hours, y=hr, name="HR", line=dict(color="#00d9ff")), row=1, col=1)
-        fig.add_trace(go.Scatter(x=hours, y=sbp, name="SBP", line=dict(color="#10b981")), row=1, col=2)
-        fig.add_trace(go.Scatter(x=hours, y=temp, name="Temp", line=dict(color="#f59e0b")), row=2, col=1)
-        fig.add_trace(go.Scatter(x=hours, y=resp, name="Resp", line=dict(color="#ef4444")), row=2, col=2)
+        fig.add_trace(go.Scatter(x=hours, y=hr, name="HR", line=dict(color="#0966d2")), row=1, col=1)
+        fig.add_trace(go.Scatter(x=hours, y=sbp, name="SBP", line=dict(color="#1a7f37")), row=1, col=2)
+        fig.add_trace(go.Scatter(x=hours, y=temp, name="Temp", line=dict(color="#b08500")), row=2, col=1)
+        fig.add_trace(go.Scatter(x=hours, y=resp, name="Resp", line=dict(color="#da3633")), row=2, col=2)
 
         fig.update_layout(
             height=500,
-            template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(10,14,23,1)',
-            font=dict(color='white'),
+            template="plotly_white",
+            paper_bgcolor='#ffffff',
+            plot_bgcolor='#f8fafb',
+            font=dict(color='#24292f'),
             showlegend=False,
         )
 
@@ -687,20 +695,21 @@ def render_patient_explorer():
     for col, (model, prob) in zip([col1, col2, col3], predictions.items()):
         with col:
             risk = "High" if prob > 0.6 else "Medium" if prob > 0.3 else "Low"
-            color = "#ef4444" if risk == "High" else "#f59e0b" if risk == "Medium" else "#10b981"
+            color = "#da3633" if risk == "High" else "#b08500" if risk == "Medium" else "#1a7f37"
 
             st.markdown(
                 f"""
                 <div style="
-                    background: #002d42;
-                    border: 1px solid #004466;
+                    background: #ffffff;
+                    border: 1px solid #e0e4e8;
                     border-radius: 8px;
                     padding: 1rem;
                     text-align: center;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
                 ">
-                    <div style="color: #94a3b8; font-size: 0.8rem;">{model}</div>
-                    <div style="color: white; font-size: 2rem; font-weight: 700;">{prob:.1%}</div>
-                    <div style="color: {color}; font-size: 0.9rem;">{risk} Risk</div>
+                    <div style="color: #57606a; font-size: 0.8rem;">{model}</div>
+                    <div style="color: #24292f; font-size: 2rem; font-weight: 700;">{prob:.1%}</div>
+                    <div style="color: {color}; font-size: 0.9rem; font-weight: 600;">{risk} Risk</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -711,7 +720,7 @@ def render_configuration():
     """Render configuration page."""
     st.markdown(AURORA_CSS, unsafe_allow_html=True)
 
-    st.title("⚙️ Configuration")
+    st.title("Configuration")
     st.markdown("Adjust prediction thresholds and display settings")
 
     col1, col2 = st.columns(2)
@@ -732,7 +741,7 @@ def render_configuration():
 
         show_confidence = st.checkbox("Show Confidence Intervals", value=True)
         show_all_patients = st.checkbox("Include All Patients", value=False)
-        theme = st.selectbox("Color Theme", ["Aurora Dark", "Aurora Light", "Clinical"])
+        theme = st.selectbox("Color Theme", ["Aurora Light", "Aurora Dark", "Clinical"])
 
         st.markdown("### Data Settings")
 
@@ -746,11 +755,11 @@ def render_configuration():
     col1, col2, col3 = st.columns([1, 1, 2])
 
     with col1:
-        if st.button("💾 Save Settings", use_container_width=True):
+        if st.button("Save Settings", use_container_width=True):
             st.success("Settings saved!")
 
     with col2:
-        if st.button("🔄 Reset Defaults", use_container_width=True):
+        if st.button("Reset Defaults", use_container_width=True):
             st.info("Settings reset to defaults")
 
 
@@ -758,7 +767,7 @@ def render_documentation():
     """Render documentation page."""
     st.markdown(AURORA_CSS, unsafe_allow_html=True)
 
-    st.title("📖 Documentation")
+    st.title("Documentation")
 
     tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Clinical Utility Score", "Models", "Data Format"])
 
@@ -802,12 +811,12 @@ def render_documentation():
         ### Scoring Rules
 
         **For sepsis patients:**
-        - **Optimal window**: 6-12 hours before onset → Maximum reward
+        - **Optimal window**: 6-12 hours before onset - Maximum reward
         - **Too early** (>12h before): Small penalty (-0.05)
         - **Too late** (after onset): Large penalty (-2.0)
 
         **For non-sepsis patients:**
-        - **False positive**: Penalty (-0.05) → Addresses alarm fatigue
+        - **False positive**: Penalty (-0.05) - Addresses alarm fatigue
         - **True negative**: No reward (expected behavior)
 
         ### Formula
@@ -840,11 +849,11 @@ def render_documentation():
 
         | Criterion | Points |
         |-----------|--------|
-        | Respiratory Rate ≥ 22 | +1 |
-        | Systolic BP ≤ 100 | +1 |
+        | Respiratory Rate >= 22 | +1 |
+        | Systolic BP <= 100 | +1 |
         | Altered mentation (GCS < 15) | +1 |
 
-        Score ≥ 2 = High risk
+        Score >= 2 = High risk
 
         ---
 
@@ -852,7 +861,7 @@ def render_documentation():
 
         **Gradient Boosted Decision Trees with engineered features**
 
-        - **Input**: 41 raw variables → ~200 engineered features
+        - **Input**: 41 raw variables - ~200 engineered features
         - **Features**: Lag (1h, 3h, 6h), rolling stats, rate of change
         - **Hyperparameters**: 500 trees, max_depth=6, lr=0.05
 
@@ -920,15 +929,15 @@ def main():
     """Main application entry point."""
     page = render_sidebar()
 
-    if page == "📊 Dashboard":
+    if page == "Dashboard":
         render_dashboard()
-    elif page == "📈 Model Comparison":
+    elif page == "Model Comparison":
         render_model_comparison()
-    elif page == "🔍 Patient Explorer":
+    elif page == "Patient Explorer":
         render_patient_explorer()
-    elif page == "⚙️ Configuration":
+    elif page == "Configuration":
         render_configuration()
-    elif page == "📖 Documentation":
+    elif page == "Documentation":
         render_documentation()
 
 

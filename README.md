@@ -1,6 +1,6 @@
 ---
 title: SepsisPulse
-emoji: 💓
+emoji:
 colorFrom: blue
 colorTo: indigo
 sdk: streamlit
@@ -10,7 +10,7 @@ pinned: false
 license: mit
 ---
 
-# 💓 SepsisPulse
+# SepsisPulse
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://huggingface.co/spaces/legomaheggo/SepsisPulse)
@@ -48,13 +48,13 @@ The app will open at `http://localhost:8501`
 
 ## Features
 
-- **📊 Dashboard**: Real-time overview of model performance metrics
-- **📈 Model Comparison**: Side-by-side analysis of qSOFA, XGBoost-TS, and TFT-Lite predictions
-- **🔍 Patient Explorer**: Individual patient vital signs and risk assessments
-- **⚙️ Configuration**: Adjustable prediction thresholds and clinical parameters
-- **📖 Documentation**: Comprehensive guides on models, metrics, and data formats
-- **🎨 Aurora Theme**: Modern dark interface with clinical color scheme
-- **🚀 HuggingFace Compatible**: Runs on free tier (2GB RAM limit)
+- **Dashboard**: Real-time overview of model performance metrics
+- **Model Comparison**: Side-by-side analysis of qSOFA, XGBoost-TS, and TFT-Lite predictions
+- **Patient Explorer**: Individual patient vital signs and risk assessments
+- **Configuration**: Adjustable prediction thresholds and clinical parameters
+- **Documentation**: Comprehensive guides on models, metrics, and data formats
+- **Aurora Theme**: Modern light interface with clinical color scheme
+- **HuggingFace Compatible**: Runs on free tier (2GB RAM limit)
 
 ## Model Comparison
 
@@ -66,8 +66,8 @@ The app will open at `http://localhost:8501`
 | **Lead Time (hours)** | 4.1 | 5.8 | 6.2 |
 | **Sensitivity** | 0.65 | 0.79 | 0.82 |
 | **Specificity** | 0.78 | 0.88 | 0.89 |
-| **Interpretability** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
-| **Inference Speed** | ⚡⚡⚡⚡⚡ | ⚡⚡⭐ | ⚡ |
+| **Interpretability** | High | Medium | Low |
+| **Inference Speed** | Very Fast | Fast | Moderate |
 
 ## Tech Stack
 

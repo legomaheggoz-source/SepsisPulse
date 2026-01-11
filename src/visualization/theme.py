@@ -1,34 +1,34 @@
-"""Aurora Solar-inspired dark theme for SepsisPulse dashboard."""
+"""Aurora Solar-inspired light theme for SepsisPulse dashboard."""
 
 import streamlit as st
 
 
-# Aurora Solar-inspired color palette
+# Aurora Solar-inspired light color palette
 COLORS = {
-    "background": "#0d1117",
-    "card_bg": "#161b22",
-    "card_border": "#30363d",
-    "primary": "#58a6ff",
-    "secondary": "#8b949e",
-    "success": "#3fb950",
-    "warning": "#d29922",
-    "danger": "#f85149",
-    "text_primary": "#f0f6fc",
-    "text_secondary": "#8b949e",
+    "background": "#f8fafb",
+    "card_bg": "#ffffff",
+    "card_border": "#e0e4e8",
+    "primary": "#0966d2",
+    "secondary": "#6e7681",
+    "success": "#1a7f37",
+    "warning": "#b08500",
+    "danger": "#da3633",
+    "text_primary": "#24292f",
+    "text_secondary": "#57606a",
 }
 
 
 def get_plotly_template() -> dict:
     """
-    Get a Plotly template matching the Aurora dark theme.
+    Get a Plotly template matching the Aurora light theme.
 
     Returns:
         dict: Plotly template configuration dictionary.
     """
     return {
         "layout": {
-            "paper_bgcolor": COLORS["background"],
-            "plot_bgcolor": COLORS["card_bg"],
+            "paper_bgcolor": COLORS["card_bg"],
+            "plot_bgcolor": COLORS["background"],
             "font": {
                 "family": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
                 "color": COLORS["text_primary"],
@@ -59,7 +59,7 @@ def get_plotly_template() -> dict:
                 "zerolinecolor": COLORS["card_border"],
             },
             "legend": {
-                "bgcolor": "rgba(0,0,0,0)",
+                "bgcolor": "rgba(255,255,255,0.9)",
                 "font": {"color": COLORS["text_primary"]},
                 "bordercolor": COLORS["card_border"],
             },
@@ -68,10 +68,10 @@ def get_plotly_template() -> dict:
                 COLORS["success"],
                 COLORS["warning"],
                 COLORS["danger"],
-                "#a371f7",
-                "#f778ba",
-                "#79c0ff",
-                "#7ee787",
+                "#8250df",
+                "#bf3989",
+                "#0550ae",
+                "#116329",
             ],
             "hoverlabel": {
                 "bgcolor": COLORS["card_bg"],
@@ -85,10 +85,10 @@ def get_plotly_template() -> dict:
 
 def apply_aurora_theme() -> None:
     """
-    Apply Aurora dark theme CSS to Streamlit application.
+    Apply Aurora light theme CSS to Streamlit application.
 
     Injects custom CSS styles that override Streamlit's default styling
-    to match the Aurora Solar-inspired dark theme.
+    to match the Aurora Solar-inspired light theme.
     """
     css = f"""
     <style>
@@ -112,6 +112,10 @@ def apply_aurora_theme() -> None:
             color: {COLORS["text_primary"]} !important;
         }}
 
+        h1 {{
+            color: {COLORS["primary"]} !important;
+        }}
+
         /* Text elements */
         p, span, label, .stMarkdown {{
             color: {COLORS["text_secondary"]};
@@ -123,6 +127,7 @@ def apply_aurora_theme() -> None:
             border: 1px solid {COLORS["card_border"]};
             border-radius: 8px;
             padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }}
 
         .stMetric label {{
@@ -130,7 +135,7 @@ def apply_aurora_theme() -> None:
         }}
 
         .stMetric [data-testid="stMetricValue"] {{
-            color: {COLORS["text_primary"]} !important;
+            color: {COLORS["primary"]} !important;
         }}
 
         .stMetric [data-testid="stMetricDelta"] svg {{
@@ -140,14 +145,14 @@ def apply_aurora_theme() -> None:
         /* Buttons */
         .stButton > button {{
             background-color: {COLORS["primary"]};
-            color: {COLORS["text_primary"]};
+            color: white;
             border: none;
             border-radius: 6px;
             transition: background-color 0.2s ease;
         }}
 
         .stButton > button:hover {{
-            background-color: #4c9aed;
+            background-color: #0550ae;
         }}
 
         /* Input fields */
@@ -229,7 +234,7 @@ def apply_aurora_theme() -> None:
 
         /* Code blocks */
         .stCodeBlock {{
-            background-color: {COLORS["card_bg"]};
+            background-color: {COLORS["background"]};
             border: 1px solid {COLORS["card_border"]};
             border-radius: 8px;
         }}
