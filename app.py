@@ -31,6 +31,20 @@ try:
 except ImportError:
     MODULES_LOADED = False
 
+# Import HuggingFace dataset loader
+try:
+    from src.data.hf_dataset import (
+        load_hf_dataset,
+        get_patient_ids_from_hf,
+        get_patient_from_hf,
+        patient_record_to_dataframe,
+        get_dataset_statistics,
+        is_hf_dataset_available,
+    )
+    HF_DATASET_AVAILABLE = True
+except ImportError:
+    HF_DATASET_AVAILABLE = False
+
 
 def init_session_state():
     """Initialize session state with default configuration values."""
@@ -804,41 +818,94 @@ def get_data_directory():
         return base_path / "data" / "sample" / "patients"
 
 
+@st.cache_data(ttl=3600, show_spinner="Loading patient database...")
+def get_available_patient_ids_cached(data_source: str):
+    """
+    Get list of available patient IDs (cached).
+
+    For Full Dataset: Try HuggingFace first, then local files.
+    For Sample Subset: Use local sample files.
+    """
+    if data_source == "Full Dataset":
+        # Try HuggingFace Dataset first (has all 40,311 patients)
+        if HF_DATASET_AVAILABLE:
+            try:
+                hf_ids = get_patient_ids_from_hf()
+                if hf_ids:
+                    return hf_ids, "huggingface"
+            except Exception as e:
+                pass  # Fall through to local files
+
+        # Try local PhysioNet files
+        base_path = Path(__file__).parent
+        for subdir in ["training_setA", "training_setB"]:
+            for base in [base_path / "data" / "physionet", Path("data/physionet")]:
+                path = base / subdir
+                if path.exists():
+                    psv_files = list(path.glob("*.psv"))
+                    if psv_files:
+                        return sorted([f.stem for f in psv_files]), "local"
+
+    # Fall back to sample data
+    base_path = Path(__file__).parent
+    sample_path = base_path / "data" / "sample" / "patients"
+    if sample_path.exists():
+        psv_files = list(sample_path.glob("*.psv"))
+        if psv_files:
+            return sorted([f.stem for f in psv_files]), "sample"
+
+    # Last resort fallback
+    return [f"p{i:05d}" for i in range(1, 21)], "fallback"
+
+
 def get_available_patient_ids():
     """Get list of available patient IDs based on data source setting."""
-    # Use cached patient IDs if available and data source hasn't changed
-    if (st.session_state._patient_ids_cache is not None and
-        st.session_state._current_data_source == st.session_state.data_source):
-        return st.session_state._patient_ids_cache
+    data_source = st.session_state.get("data_source", "Full Dataset")
+    patient_ids, source = get_available_patient_ids_cached(data_source)
 
-    data_dir = get_data_directory()
+    # Store source for display
+    st.session_state._data_source_type = source
 
-    try:
-        if data_dir.exists():
-            patient_ids = sorted([f.stem for f in data_dir.glob("*.psv")])
-            # Cache the results
-            st.session_state._patient_ids_cache = patient_ids
-            st.session_state._current_data_source = st.session_state.data_source
-            return patient_ids
-    except Exception as e:
-        st.warning(f"Could not load patient IDs: {e}")
-
-    # Fallback to sample IDs
-    return [f"p{i:05d}" for i in range(1, 21)]
+    return patient_ids
 
 
-def load_patient_data(patient_id: str):
-    """Load actual patient data from file."""
+@st.cache_data(ttl=300, show_spinner="Loading patient data...")
+def load_patient_data_cached(patient_id: str, data_source: str):
+    """Load patient data with caching."""
+    # Try HuggingFace first for full dataset
+    if data_source == "Full Dataset" and HF_DATASET_AVAILABLE:
+        try:
+            record = get_patient_from_hf(patient_id)
+            if record is not None:
+                df = patient_record_to_dataframe(record)
+                if not df.empty:
+                    # Add metadata from record
+                    df.attrs["has_sepsis"] = record.get("has_sepsis", False)
+                    df.attrs["sepsis_onset_hour"] = record.get("sepsis_onset_hour")
+                    df.attrs["source"] = "huggingface"
+                    return df
+        except Exception:
+            pass  # Fall through to local files
+
+    # Try local files
     data_dir = get_data_directory()
     file_path = data_dir / f"{patient_id}.psv"
 
     try:
         if file_path.exists() and MODULES_LOADED:
-            return load_patient(str(file_path))
-    except Exception as e:
-        st.warning(f"Could not load patient data: {e}")
+            df = load_patient(str(file_path))
+            df.attrs["source"] = "local"
+            return df
+    except Exception:
+        pass
 
     return None
+
+
+def load_patient_data(patient_id: str):
+    """Load actual patient data."""
+    data_source = st.session_state.get("data_source", "Full Dataset")
+    return load_patient_data_cached(patient_id, data_source)
 
 
 def render_patient_explorer():
@@ -848,9 +915,16 @@ def render_patient_explorer():
     st.title("Patient Explorer")
     st.markdown("Explore individual patient predictions and vital signs")
 
-    # Show current data source
+    # Show current data source with more detail
     data_source = st.session_state.get("data_source", "Full Dataset")
-    st.info(f"**Data Source:** {data_source} | Change in Configuration tab")
+    source_type = st.session_state.get("_data_source_type", "unknown")
+    source_labels = {
+        "huggingface": "HuggingFace Dataset (40,311 patients)",
+        "local": "Local PhysioNet Files",
+        "sample": "Sample Data (20 patients)",
+        "fallback": "Demo Data",
+    }
+    st.info(f"**Data Source:** {source_labels.get(source_type, data_source)} | Change in Configuration tab")
 
     # Get available patient IDs
     patient_ids = get_available_patient_ids()
@@ -859,7 +933,7 @@ def render_patient_explorer():
         st.error("No patient data available. Please check the Configuration tab.")
         return
 
-    # Patient selector
+    # Patient selector and visualization options
     col1, col2 = st.columns([1, 3])
 
     with col1:
@@ -877,6 +951,10 @@ def render_patient_explorer():
         st.markdown("### Patient Info")
         st.markdown(f"**ID:** {patient_id}")
 
+        has_sepsis = False
+        sepsis_onset = None
+        icu_hours = 0
+
         if patient_df is not None and not patient_df.empty:
             # Extract real demographics from data
             age = patient_df["Age"].iloc[0] if "Age" in patient_df.columns else "N/A"
@@ -889,31 +967,74 @@ def render_patient_explorer():
             st.markdown(f"**ICU Stay:** {icu_hours}h")
 
             if has_sepsis:
-                sepsis_onset = patient_df[patient_df["SepsisLabel"] == 1].index[0] if has_sepsis else None
+                sepsis_onset = int(patient_df[patient_df["SepsisLabel"] == 1].index[0])
                 st.error(f"Sepsis Positive (onset: hour {sepsis_onset})")
             else:
                 st.success("No Sepsis")
+
+            # Data source indicator
+            data_src = patient_df.attrs.get("source", "unknown")
+            st.caption(f"Source: {data_src}")
         else:
             st.markdown("**Age:** N/A")
             st.markdown("**Gender:** N/A")
             st.markdown("**ICU Stay:** N/A")
             st.warning("Patient data not available")
 
+        # Visualization options
+        st.markdown("### View Options")
+        view_mode = st.radio(
+            "Time Window",
+            ["Critical Window", "Full Stay", "Custom Range"],
+            key="view_mode_radio",
+            help="Critical Window shows 24h before sepsis onset (or last 24h for non-sepsis)"
+        )
+
+        if view_mode == "Custom Range":
+            max_hours = max(icu_hours, 48)
+            custom_range = st.slider(
+                "Hour Range",
+                0, max_hours,
+                (max(0, max_hours - 24), max_hours),
+                key="custom_range_slider"
+            )
+
     with col2:
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
 
         if patient_df is not None and not patient_df.empty:
-            # Use actual patient vitals
-            hours = np.arange(len(patient_df))
+            # Determine time window based on view mode
+            total_hours = len(patient_df)
+
+            if view_mode == "Critical Window":
+                if has_sepsis and sepsis_onset is not None:
+                    # Show 24 hours leading up to sepsis onset
+                    window_end = min(sepsis_onset + 6, total_hours)  # Include 6h after onset
+                    window_start = max(0, sepsis_onset - 24)
+                    chart_title = f"Critical Window: 24h Before Sepsis Onset (Hour {sepsis_onset})"
+                else:
+                    # Show last 24 hours for non-sepsis patients
+                    window_end = total_hours
+                    window_start = max(0, total_hours - 24)
+                    chart_title = f"Last 24 Hours of ICU Stay"
+            elif view_mode == "Custom Range":
+                window_start, window_end = custom_range
+                chart_title = f"Hours {window_start} to {window_end}"
+            else:  # Full Stay
+                window_start = 0
+                window_end = total_hours
+                chart_title = f"Full ICU Stay ({total_hours} hours)"
+
+            # Slice data to window
+            df_window = patient_df.iloc[window_start:window_end].copy()
+            hours = np.arange(window_start, window_start + len(df_window))
 
             # Extract vitals with forward-fill for missing values
-            hr = patient_df["HR"].ffill().bfill().values if "HR" in patient_df.columns else np.full(len(patient_df), np.nan)
-            sbp = patient_df["SBP"].ffill().bfill().values if "SBP" in patient_df.columns else np.full(len(patient_df), np.nan)
-            temp = patient_df["Temp"].ffill().bfill().values if "Temp" in patient_df.columns else np.full(len(patient_df), np.nan)
-            resp = patient_df["Resp"].ffill().bfill().values if "Resp" in patient_df.columns else np.full(len(patient_df), np.nan)
-
-            chart_title = "Actual Patient Vitals"
+            hr = df_window["HR"].ffill().bfill().values if "HR" in df_window.columns else np.full(len(df_window), np.nan)
+            sbp = df_window["SBP"].ffill().bfill().values if "SBP" in df_window.columns else np.full(len(df_window), np.nan)
+            temp = df_window["Temp"].ffill().bfill().values if "Temp" in df_window.columns else np.full(len(df_window), np.nan)
+            resp = df_window["Resp"].ffill().bfill().values if "Resp" in df_window.columns else np.full(len(df_window), np.nan)
         else:
             # Fallback to demo data if patient data unavailable
             hours = np.arange(0, 48)
@@ -923,39 +1044,81 @@ def render_patient_explorer():
             temp = 37 + np.random.randn(48).cumsum() * 0.1
             resp = 16 + np.random.randn(48).cumsum() * 0.5
             chart_title = "Simulated Vitals (data unavailable)"
+            window_start, window_end = 0, 48
 
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=("Heart Rate (bpm)", "Systolic BP (mmHg)", "Temperature (°C)", "Respiratory Rate (/min)"),
+            vertical_spacing=0.12,
+            horizontal_spacing=0.08,
         )
 
-        fig.add_trace(go.Scatter(x=hours, y=hr, name="HR", line=dict(color="#0966d2"), mode='lines+markers', marker=dict(size=3)), row=1, col=1)
-        fig.add_trace(go.Scatter(x=hours, y=sbp, name="SBP", line=dict(color="#1a7f37"), mode='lines+markers', marker=dict(size=3)), row=1, col=2)
-        fig.add_trace(go.Scatter(x=hours, y=temp, name="Temp", line=dict(color="#b08500"), mode='lines+markers', marker=dict(size=3)), row=2, col=1)
-        fig.add_trace(go.Scatter(x=hours, y=resp, name="Resp", line=dict(color="#da3633"), mode='lines+markers', marker=dict(size=3)), row=2, col=2)
+        # Add traces with better styling
+        fig.add_trace(go.Scatter(
+            x=hours, y=hr, name="HR",
+            line=dict(color="#0966d2", width=2),
+            mode='lines+markers', marker=dict(size=4),
+            hovertemplate="Hour %{x}<br>HR: %{y:.0f} bpm<extra></extra>"
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=hours, y=sbp, name="SBP",
+            line=dict(color="#1a7f37", width=2),
+            mode='lines+markers', marker=dict(size=4),
+            hovertemplate="Hour %{x}<br>SBP: %{y:.0f} mmHg<extra></extra>"
+        ), row=1, col=2)
+        fig.add_trace(go.Scatter(
+            x=hours, y=temp, name="Temp",
+            line=dict(color="#b08500", width=2),
+            mode='lines+markers', marker=dict(size=4),
+            hovertemplate="Hour %{x}<br>Temp: %{y:.1f} °C<extra></extra>"
+        ), row=2, col=1)
+        fig.add_trace(go.Scatter(
+            x=hours, y=resp, name="Resp",
+            line=dict(color="#da3633", width=2),
+            mode='lines+markers', marker=dict(size=4),
+            hovertemplate="Hour %{x}<br>Resp: %{y:.0f} /min<extra></extra>"
+        ), row=2, col=2)
 
-        # Add sepsis onset marker if applicable
-        if patient_df is not None and not patient_df.empty:
-            if "SepsisLabel" in patient_df.columns and patient_df["SepsisLabel"].max() > 0:
-                sepsis_idx = patient_df[patient_df["SepsisLabel"] == 1].index[0]
+        # Add sepsis onset marker if within window
+        if has_sepsis and sepsis_onset is not None:
+            if window_start <= sepsis_onset <= window_end:
                 for row, col in [(1, 1), (1, 2), (2, 1), (2, 2)]:
-                    fig.add_vline(x=sepsis_idx, line_dash="dash", line_color="red", row=row, col=col)
+                    fig.add_vline(
+                        x=sepsis_onset, line_dash="dash", line_color="red", line_width=2,
+                        annotation_text="Sepsis Onset", annotation_position="top",
+                        row=row, col=col
+                    )
+
+        # Add normal range shading for reference
+        # HR normal: 60-100, SBP normal: 90-140, Temp normal: 36.5-37.5, Resp normal: 12-20
+        fig.add_hrect(y0=60, y1=100, fillcolor="lightgreen", opacity=0.1, line_width=0, row=1, col=1)
+        fig.add_hrect(y0=90, y1=140, fillcolor="lightgreen", opacity=0.1, line_width=0, row=1, col=2)
+        fig.add_hrect(y0=36.5, y1=37.5, fillcolor="lightgreen", opacity=0.1, line_width=0, row=2, col=1)
+        fig.add_hrect(y0=12, y1=20, fillcolor="lightgreen", opacity=0.1, line_width=0, row=2, col=2)
 
         fig.update_layout(
-            height=500,
+            height=550,
             template="plotly_white",
             paper_bgcolor='#ffffff',
             plot_bgcolor='#f8fafb',
             font=dict(color='#24292f'),
             showlegend=False,
-            title=dict(text=chart_title, x=0.5, font=dict(size=14)),
+            title=dict(text=chart_title, x=0.5, font=dict(size=14, color='#24292f')),
+            margin=dict(t=80, b=60),
         )
 
-        # Update x-axes labels
-        fig.update_xaxes(title_text="Hour", row=2, col=1)
-        fig.update_xaxes(title_text="Hour", row=2, col=2)
+        # Update axes
+        fig.update_xaxes(title_text="Hour of ICU Stay", row=2, col=1, title_font=dict(size=11))
+        fig.update_xaxes(title_text="Hour of ICU Stay", row=2, col=2, title_font=dict(size=11))
+        fig.update_yaxes(title_text="bpm", row=1, col=1, title_font=dict(size=10))
+        fig.update_yaxes(title_text="mmHg", row=1, col=2, title_font=dict(size=10))
+        fig.update_yaxes(title_text="°C", row=2, col=1, title_font=dict(size=10))
+        fig.update_yaxes(title_text="/min", row=2, col=2, title_font=dict(size=10))
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # Legend for normal ranges
+        st.caption("Green shaded areas indicate normal ranges. Red dashed line marks sepsis onset.")
 
     st.divider()
 
