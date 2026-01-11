@@ -74,14 +74,47 @@ def get_patient_ids_from_hf() -> List[str]:
     """
     dataset = load_hf_dataset()
     if dataset is None:
+        logger.warning("Dataset is None, cannot get patient IDs")
         return []
 
     try:
-        patient_ids = sorted(dataset["patient_id"])
-        return patient_ids
+        # Access patient_id column directly - more efficient than iterating
+        patient_ids = dataset["patient_id"]
+        if patient_ids:
+            sorted_ids = sorted(set(patient_ids))  # Use set to ensure uniqueness
+            logger.info(f"Retrieved {len(sorted_ids)} patient IDs from HuggingFace")
+            return sorted_ids
+        else:
+            logger.warning("patient_id column is empty")
+            return []
     except Exception as e:
         logger.warning(f"Failed to get patient IDs: {e}")
         return []
+
+
+# Index cache for fast patient lookups
+_patient_index_cache = None
+
+
+def _build_patient_index():
+    """Build an index mapping patient_id to dataset row index for fast lookup."""
+    global _patient_index_cache
+    if _patient_index_cache is not None:
+        return _patient_index_cache
+
+    dataset = load_hf_dataset()
+    if dataset is None:
+        return {}
+
+    try:
+        # Build index: patient_id -> row index
+        patient_ids = dataset["patient_id"]
+        _patient_index_cache = {pid: idx for idx, pid in enumerate(patient_ids)}
+        logger.info(f"Built patient index with {len(_patient_index_cache)} entries")
+        return _patient_index_cache
+    except Exception as e:
+        logger.warning(f"Failed to build patient index: {e}")
+        return {}
 
 
 def get_patient_from_hf(patient_id: str) -> Optional[Dict[str, Any]]:
@@ -99,15 +132,14 @@ def get_patient_from_hf(patient_id: str) -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        # Filter dataset for the specific patient
-        patient_data = dataset.filter(lambda x: x["patient_id"] == patient_id)
-
-        if len(patient_data) == 0:
-            logger.warning(f"Patient {patient_id} not found in dataset")
+        # Use index for fast lookup
+        index = _build_patient_index()
+        if patient_id not in index:
+            logger.warning(f"Patient {patient_id} not found in dataset index")
             return None
 
-        # Get the first (should be only) matching record
-        record = patient_data[0]
+        row_idx = index[patient_id]
+        record = dataset[row_idx]
         return dict(record)
 
     except Exception as e:
@@ -129,24 +161,30 @@ def patient_record_to_dataframe(record: Dict[str, Any]) -> pd.DataFrame:
         return pd.DataFrame()
 
     # Get the length from one of the vital sign arrays
-    n_hours = len(record.get("HR", []))
+    hr_data = record.get("HR", [])
+    n_hours = len(hr_data) if hr_data else 0
 
     if n_hours == 0:
         return pd.DataFrame()
 
+    # Define vital sign columns to extract
+    vital_columns = ["HR", "SBP", "DBP", "MAP", "Resp", "Temp", "O2Sat", "SepsisLabel"]
+
     # Build DataFrame from vital signs
-    data = {
-        "HR": record.get("HR", [None] * n_hours),
-        "SBP": record.get("SBP", [None] * n_hours),
-        "DBP": record.get("DBP", [None] * n_hours),
-        "MAP": record.get("MAP", [None] * n_hours),
-        "Resp": record.get("Resp", [None] * n_hours),
-        "Temp": record.get("Temp", [None] * n_hours),
-        "O2Sat": record.get("O2Sat", [None] * n_hours),
-        "SepsisLabel": record.get("SepsisLabel", [0] * n_hours),
-    }
+    data = {}
+    for col in vital_columns:
+        col_data = record.get(col, [])
+        if col_data and len(col_data) == n_hours:
+            # Convert to numpy array to properly handle NaN values
+            data[col] = np.array(col_data, dtype=np.float64)
+        else:
+            # Fill with NaN if missing
+            data[col] = np.full(n_hours, np.nan)
 
     df = pd.DataFrame(data)
+
+    # Ensure SepsisLabel is integer (0 or 1)
+    df["SepsisLabel"] = df["SepsisLabel"].fillna(0).astype(int)
 
     # Add demographics (constant across all rows)
     df["Age"] = record.get("age")

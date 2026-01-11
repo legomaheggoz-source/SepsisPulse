@@ -826,15 +826,25 @@ def get_available_patient_ids_cached(data_source: str):
     For Full Dataset: Try HuggingFace first, then local files.
     For Sample Subset: Use local sample files.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     if data_source == "Full Dataset":
         # Try HuggingFace Dataset first (has all 40,311 patients)
         if HF_DATASET_AVAILABLE:
             try:
+                logger.info("Attempting to load patient IDs from HuggingFace...")
                 hf_ids = get_patient_ids_from_hf()
-                if hf_ids:
+                if hf_ids and len(hf_ids) > 0:
+                    logger.info(f"Successfully loaded {len(hf_ids)} patients from HuggingFace")
                     return hf_ids, "huggingface"
+                else:
+                    logger.warning("HuggingFace returned empty patient list")
             except Exception as e:
+                logger.warning(f"Failed to load from HuggingFace: {e}")
                 pass  # Fall through to local files
+        else:
+            logger.info("HuggingFace dataset library not available")
 
         # Try local PhysioNet files
         base_path = Path(__file__).parent
@@ -844,6 +854,7 @@ def get_available_patient_ids_cached(data_source: str):
                 if path.exists():
                     psv_files = list(path.glob("*.psv"))
                     if psv_files:
+                        logger.info(f"Loaded {len(psv_files)} patients from local files")
                         return sorted([f.stem for f in psv_files]), "local"
 
     # Fall back to sample data
@@ -852,9 +863,11 @@ def get_available_patient_ids_cached(data_source: str):
     if sample_path.exists():
         psv_files = list(sample_path.glob("*.psv"))
         if psv_files:
+            logger.info(f"Using sample data: {len(psv_files)} patients")
             return sorted([f.stem for f in psv_files]), "sample"
 
     # Last resort fallback
+    logger.warning("No data sources available, using demo fallback")
     return [f"p{i:05d}" for i in range(1, 21)], "fallback"
 
 
@@ -1085,7 +1098,6 @@ def render_patient_explorer():
                 for row, col in [(1, 1), (1, 2), (2, 1), (2, 2)]:
                     fig.add_vline(
                         x=sepsis_onset, line_dash="dash", line_color="red", line_width=2,
-                        annotation_text="Sepsis Onset", annotation_position="top",
                         row=row, col=col
                     )
 
