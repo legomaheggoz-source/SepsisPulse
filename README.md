@@ -1,6 +1,6 @@
 ---
 title: SepsisPulse
-emoji: "S"
+emoji: "📊"
 colorFrom: blue
 colorTo: indigo
 sdk: streamlit
@@ -23,7 +23,7 @@ SepsisPulse is an interactive auditing platform that compares three mathematical
 
 ## Screenshot
 
-[Demo Dashboard Screenshot - Shows the Aurora dark theme with model performance cards and interactive charts]
+[Demo Dashboard Screenshot - Shows the Aurora light theme with model performance cards and interactive charts]
 
 ## Quick Start
 
@@ -128,7 +128,7 @@ pytest tests/ --cov=src
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-Copyright © 2026 SepsisPulse Contributors
+Copyright 2026 SepsisPulse Contributors
 
 ## Acknowledgments
 
