@@ -1,6 +1,6 @@
 ---
 title: SepsisPulse
-emoji:
+emoji: "S"
 colorFrom: blue
 colorTo: indigo
 sdk: streamlit
