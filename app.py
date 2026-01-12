@@ -1068,38 +1068,64 @@ def render_patient_explorer():
             chart_title = "Simulated Vitals (data unavailable)"
             window_start, window_end = 0, 48
 
+        # Convert to lists for Plotly compatibility
+        hours_list = hours.tolist()
+        hr_list = hr.tolist()
+        sbp_list = sbp.tolist()
+        temp_list = temp.tolist()
+        resp_list = resp.tolist()
+
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=("Heart Rate (bpm)", "Systolic BP (mmHg)", "Temperature (°C)", "Respiratory Rate (/min)"),
-            vertical_spacing=0.12,
-            horizontal_spacing=0.08,
+            vertical_spacing=0.15,
+            horizontal_spacing=0.10,
         )
 
-        # Add traces with better styling
+        # Add vital sign traces - clear line graphs with markers
         fig.add_trace(go.Scatter(
-            x=hours, y=hr, name="HR",
-            line=dict(color="#0966d2", width=2),
-            mode='lines+markers', marker=dict(size=4),
-            hovertemplate="Hour %{x}<br>HR: %{y:.0f} bpm<extra></extra>"
+            x=hours_list, y=hr_list, name="HR",
+            line=dict(color="#2563eb", width=2.5),
+            mode='lines+markers',
+            marker=dict(size=6, color="#2563eb"),
+            hovertemplate="Hour %{x}<br>HR: %{y:.0f} bpm<extra></extra>",
+            connectgaps=True,
         ), row=1, col=1)
+
         fig.add_trace(go.Scatter(
-            x=hours, y=sbp, name="SBP",
-            line=dict(color="#1a7f37", width=2),
-            mode='lines+markers', marker=dict(size=4),
-            hovertemplate="Hour %{x}<br>SBP: %{y:.0f} mmHg<extra></extra>"
+            x=hours_list, y=sbp_list, name="SBP",
+            line=dict(color="#16a34a", width=2.5),
+            mode='lines+markers',
+            marker=dict(size=6, color="#16a34a"),
+            hovertemplate="Hour %{x}<br>SBP: %{y:.0f} mmHg<extra></extra>",
+            connectgaps=True,
         ), row=1, col=2)
+
         fig.add_trace(go.Scatter(
-            x=hours, y=temp, name="Temp",
-            line=dict(color="#b08500", width=2),
-            mode='lines+markers', marker=dict(size=4),
-            hovertemplate="Hour %{x}<br>Temp: %{y:.1f} °C<extra></extra>"
+            x=hours_list, y=temp_list, name="Temp",
+            line=dict(color="#ea580c", width=2.5),
+            mode='lines+markers',
+            marker=dict(size=6, color="#ea580c"),
+            hovertemplate="Hour %{x}<br>Temp: %{y:.1f} °C<extra></extra>",
+            connectgaps=True,
         ), row=2, col=1)
+
         fig.add_trace(go.Scatter(
-            x=hours, y=resp, name="Resp",
-            line=dict(color="#da3633", width=2),
-            mode='lines+markers', marker=dict(size=4),
-            hovertemplate="Hour %{x}<br>Resp: %{y:.0f} /min<extra></extra>"
+            x=hours_list, y=resp_list, name="Resp",
+            line=dict(color="#dc2626", width=2.5),
+            mode='lines+markers',
+            marker=dict(size=6, color="#dc2626"),
+            hovertemplate="Hour %{x}<br>Resp: %{y:.0f} /min<extra></extra>",
+            connectgaps=True,
         ), row=2, col=2)
+
+        # Add threshold lines for abnormal values (clinical thresholds)
+        # These help visualize when vitals become concerning
+        fig.add_hline(y=100, line_dash="dot", line_color="orange", line_width=1, row=1, col=1)  # HR high
+        fig.add_hline(y=60, line_dash="dot", line_color="orange", line_width=1, row=1, col=1)   # HR low
+        fig.add_hline(y=90, line_dash="dot", line_color="orange", line_width=1, row=1, col=2)   # SBP low (hypotension)
+        fig.add_hline(y=38, line_dash="dot", line_color="orange", line_width=1, row=2, col=1)   # Fever threshold
+        fig.add_hline(y=22, line_dash="dot", line_color="orange", line_width=1, row=2, col=2)   # Resp high (qSOFA)
 
         # Add sepsis onset marker if within window
         if has_sepsis and sepsis_onset is not None:
@@ -1111,35 +1137,23 @@ def render_patient_explorer():
                     )
 
         # Calculate y-axis ranges based on actual data (with padding)
-        def get_range(data, normal_min, normal_max, padding=0.1):
-            valid = data[~np.isnan(data)] if len(data) > 0 else np.array([normal_min, normal_max])
+        def get_range(data, threshold_low, threshold_high, padding=0.15):
+            valid = [v for v in data if v is not None and not np.isnan(v)]
             if len(valid) == 0:
-                return [normal_min, normal_max]
-            data_min, data_max = valid.min(), valid.max()
-            # Include normal range in the view
-            view_min = min(data_min, normal_min)
-            view_max = max(data_max, normal_max)
+                return [threshold_low - 10, threshold_high + 10]
+            data_min, data_max = min(valid), max(valid)
+            # Include thresholds in view
+            view_min = min(data_min, threshold_low)
+            view_max = max(data_max, threshold_high)
             # Add padding
             pad = (view_max - view_min) * padding
             return [view_min - pad, view_max + pad]
 
-        hr_range = get_range(hr, 60, 100)
-        sbp_range = get_range(sbp, 90, 140)
-        temp_range = get_range(temp, 36.5, 37.5)
-        resp_range = get_range(resp, 12, 20)
-
-        # Add normal range shading for reference (BEFORE setting axis range)
-        # HR normal: 60-100, SBP normal: 90-140, Temp normal: 36.5-37.5, Resp normal: 12-20
-        fig.add_hrect(y0=60, y1=100, fillcolor="lightgreen", opacity=0.1, line_width=0, row=1, col=1)
-        fig.add_hrect(y0=90, y1=140, fillcolor="lightgreen", opacity=0.1, line_width=0, row=1, col=2)
-        fig.add_hrect(y0=36.5, y1=37.5, fillcolor="lightgreen", opacity=0.1, line_width=0, row=2, col=1)
-        fig.add_hrect(y0=12, y1=20, fillcolor="lightgreen", opacity=0.1, line_width=0, row=2, col=2)
-
-        # Set explicit y-axis ranges to ensure data is visible
-        fig.update_yaxes(range=hr_range, row=1, col=1)
-        fig.update_yaxes(range=sbp_range, row=1, col=2)
-        fig.update_yaxes(range=temp_range, row=2, col=1)
-        fig.update_yaxes(range=resp_range, row=2, col=2)
+        # Set y-axis ranges to show data and thresholds
+        fig.update_yaxes(range=get_range(hr_list, 60, 100), row=1, col=1)
+        fig.update_yaxes(range=get_range(sbp_list, 90, 140), row=1, col=2)
+        fig.update_yaxes(range=get_range(temp_list, 36, 38), row=2, col=1)
+        fig.update_yaxes(range=get_range(resp_list, 12, 22), row=2, col=2)
 
         fig.update_layout(
             height=550,
@@ -1162,8 +1176,8 @@ def render_patient_explorer():
 
         st.plotly_chart(fig, use_container_width=True)
 
-        # Legend for normal ranges
-        st.caption("Green shaded areas indicate normal ranges. Red dashed line marks sepsis onset.")
+        # Legend explaining the chart markers
+        st.caption("**Orange dotted lines:** Clinical thresholds (abnormal values) | **Red dashed line:** Sepsis onset hour")
 
         # Show data table for transparency
         with st.expander("View Raw Data"):
