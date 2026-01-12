@@ -1179,6 +1179,81 @@ def render_patient_explorer():
         # Legend explaining the chart markers
         st.caption("**Orange dotted lines:** Clinical thresholds (abnormal values) | **Red dashed line:** Sepsis onset hour")
 
+        # Clinical Insights for sepsis-positive patients
+        if has_sepsis and sepsis_onset is not None and patient_df is not None:
+            st.markdown("### Clinical Insights")
+
+            # Analyze what likely triggered the sepsis prediction
+            insights = []
+            warnings = []
+
+            # Get data around onset (6 hours before to onset)
+            onset_start = max(0, sepsis_onset - 6)
+            onset_window = patient_df.iloc[onset_start:sepsis_onset + 1]
+
+            # Get baseline (first 6 hours or available)
+            baseline_end = min(6, len(patient_df))
+            baseline = patient_df.iloc[0:baseline_end]
+
+            # Analyze each vital sign
+            # Heart Rate
+            if "HR" in patient_df.columns:
+                hr_at_onset = patient_df["HR"].iloc[sepsis_onset] if sepsis_onset < len(patient_df) else np.nan
+                hr_baseline = baseline["HR"].mean()
+                hr_max_before = onset_window["HR"].max()
+                if not np.isnan(hr_max_before):
+                    if hr_max_before > 100:
+                        insights.append(f"**Tachycardia**: HR reached {hr_max_before:.0f} bpm (threshold: 100)")
+                    if not np.isnan(hr_baseline) and hr_max_before > hr_baseline + 20:
+                        insights.append(f"**HR increase**: +{hr_max_before - hr_baseline:.0f} bpm from baseline ({hr_baseline:.0f} to {hr_max_before:.0f})")
+
+            # Systolic Blood Pressure
+            if "SBP" in patient_df.columns:
+                sbp_at_onset = patient_df["SBP"].iloc[sepsis_onset] if sepsis_onset < len(patient_df) else np.nan
+                sbp_baseline = baseline["SBP"].mean()
+                sbp_min_before = onset_window["SBP"].min()
+                if not np.isnan(sbp_min_before):
+                    if sbp_min_before <= 100:
+                        severity = "Hypotension" if sbp_min_before <= 90 else "Low BP"
+                        insights.append(f"**{severity}**: SBP dropped to {sbp_min_before:.0f} mmHg (threshold: 100)")
+                    if not np.isnan(sbp_baseline) and sbp_baseline - sbp_min_before > 20:
+                        insights.append(f"**BP drop**: -{sbp_baseline - sbp_min_before:.0f} mmHg from baseline ({sbp_baseline:.0f} to {sbp_min_before:.0f})")
+
+            # Temperature
+            if "Temp" in patient_df.columns:
+                temp_max_before = onset_window["Temp"].max()
+                temp_min_before = onset_window["Temp"].min()
+                if not np.isnan(temp_max_before):
+                    if temp_max_before >= 38.0:
+                        insights.append(f"**Fever**: Temperature reached {temp_max_before:.1f}°C (threshold: 38.0)")
+                    elif temp_max_before >= 37.5:
+                        warnings.append(f"Elevated temperature: {temp_max_before:.1f}°C")
+                if not np.isnan(temp_min_before) and temp_min_before < 36.0:
+                    insights.append(f"**Hypothermia**: Temperature dropped to {temp_min_before:.1f}°C")
+
+            # Respiratory Rate
+            if "Resp" in patient_df.columns:
+                resp_max_before = onset_window["Resp"].max()
+                resp_baseline = baseline["Resp"].mean()
+                if not np.isnan(resp_max_before):
+                    if resp_max_before >= 22:
+                        insights.append(f"**Tachypnea**: Respiratory rate reached {resp_max_before:.0f}/min (qSOFA threshold: 22)")
+                    elif resp_max_before >= 20:
+                        warnings.append(f"Elevated respiratory rate: {resp_max_before:.0f}/min")
+
+            # Display insights
+            if insights:
+                st.markdown("**Likely triggers for sepsis prediction:**")
+                for insight in insights:
+                    st.markdown(f"- {insight}")
+            else:
+                st.info("No obvious vital sign threshold crossings detected. The model may have identified subtle patterns or trends not captured by simple thresholds.")
+
+            if warnings:
+                st.markdown("**Additional observations:**")
+                for warning in warnings:
+                    st.markdown(f"- {warning}")
+
         # Show data table for transparency
         with st.expander("View Raw Data"):
             chart_data = pd.DataFrame({
