@@ -50,10 +50,15 @@ The app will open at `http://localhost:8501`
 
 - **Dashboard**: Real-time overview of model performance metrics
 - **Model Comparison**: Side-by-side analysis of qSOFA, XGBoost-TS, and TFT-Lite predictions
-- **Patient Explorer**: Individual patient vital signs and risk assessments
+- **Patient Explorer**: Browse all 40,311 patients with interactive vital signs charts
+  - Line graphs showing HR, SBP, Temperature, Respiratory Rate over time
+  - Clinical threshold lines (orange) to identify abnormal values
+  - Sepsis onset markers (red) for positive cases
+  - View modes: Critical Window, Full Stay, Custom Range
 - **Configuration**: Adjustable prediction thresholds and clinical parameters
 - **Documentation**: Comprehensive guides on models, metrics, and data formats
 - **Aurora Theme**: Modern light interface with clinical color scheme
+- **HuggingFace Dataset**: Full dataset hosted on HuggingFace for instant access
 - **HuggingFace Compatible**: Runs on free tier (2GB RAM limit)
 
 ## Model Comparison
@@ -103,6 +108,7 @@ See [Training Guide](docs/TRAINING.md) and [Model Integration](docs/MODEL_INTEGR
 - **Data Processing**: [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [SciPy](https://scipy.org/)
 - **Visualization**: [Plotly](https://plotly.com/), [Altair](https://altair-viz.github.io/)
 - **Data Source**: [PhysioNet 2019 Challenge](https://physionet.org/content/challenge-2019/)
+- **Dataset Hosting**: [HuggingFace Datasets](https://huggingface.co/datasets/legomaheggo/physionet-sepsis-2019) (40,311 patients)
 - **Deployment**: [HuggingFace Spaces](https://huggingface.co/spaces)
 
 ## Project Structure
@@ -176,4 +182,4 @@ Copyright 2026 SepsisPulse Contributors
 
 **Questions?** Open an [issue](https://github.com/legomaheggoz-source/SepsisPulse/issues) or reach out to the maintainers.
 
-**Version**: 1.1.1 | **Last Updated**: January 2026 | **Models**: Trained on PhysioNet 2019 (40,311 patients)
+**Version**: 1.2.0 | **Last Updated**: January 2026 | **Models**: Trained on PhysioNet 2019 (40,311 patients)
