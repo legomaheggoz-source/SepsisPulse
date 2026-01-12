@@ -1110,12 +1110,36 @@ def render_patient_explorer():
                         row=row, col=col
                     )
 
-        # Add normal range shading for reference
+        # Calculate y-axis ranges based on actual data (with padding)
+        def get_range(data, normal_min, normal_max, padding=0.1):
+            valid = data[~np.isnan(data)] if len(data) > 0 else np.array([normal_min, normal_max])
+            if len(valid) == 0:
+                return [normal_min, normal_max]
+            data_min, data_max = valid.min(), valid.max()
+            # Include normal range in the view
+            view_min = min(data_min, normal_min)
+            view_max = max(data_max, normal_max)
+            # Add padding
+            pad = (view_max - view_min) * padding
+            return [view_min - pad, view_max + pad]
+
+        hr_range = get_range(hr, 60, 100)
+        sbp_range = get_range(sbp, 90, 140)
+        temp_range = get_range(temp, 36.5, 37.5)
+        resp_range = get_range(resp, 12, 20)
+
+        # Add normal range shading for reference (BEFORE setting axis range)
         # HR normal: 60-100, SBP normal: 90-140, Temp normal: 36.5-37.5, Resp normal: 12-20
         fig.add_hrect(y0=60, y1=100, fillcolor="lightgreen", opacity=0.1, line_width=0, row=1, col=1)
         fig.add_hrect(y0=90, y1=140, fillcolor="lightgreen", opacity=0.1, line_width=0, row=1, col=2)
         fig.add_hrect(y0=36.5, y1=37.5, fillcolor="lightgreen", opacity=0.1, line_width=0, row=2, col=1)
         fig.add_hrect(y0=12, y1=20, fillcolor="lightgreen", opacity=0.1, line_width=0, row=2, col=2)
+
+        # Set explicit y-axis ranges to ensure data is visible
+        fig.update_yaxes(range=hr_range, row=1, col=1)
+        fig.update_yaxes(range=sbp_range, row=1, col=2)
+        fig.update_yaxes(range=temp_range, row=2, col=1)
+        fig.update_yaxes(range=resp_range, row=2, col=2)
 
         fig.update_layout(
             height=550,
