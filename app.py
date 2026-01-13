@@ -596,8 +596,8 @@ def render_dashboard():
             tpr = np.sort(tpr)
 
             fig.add_trace(go.Scatter(
-                x=fpr,
-                y=tpr,
+                x=fpr.tolist(),  # Convert numpy array to list for Plotly compatibility
+                y=tpr.tolist(),
                 mode='lines',
                 name=f"{model_name} (AUC={auc_value:.2f})",
                 line=dict(width=2, color=model_colors.get(model_name, default_color)),
@@ -638,7 +638,7 @@ def render_dashboard():
             lead_times = np.clip(lead_times, 0, 24)
 
             fig.add_trace(go.Histogram(
-                x=lead_times,
+                x=lead_times.tolist(),  # Convert numpy array to list for Plotly compatibility
                 name=model_name,
                 opacity=0.7,
                 nbinsx=24,
@@ -677,8 +677,8 @@ def render_dashboard():
             utility = np.clip(utility + np.random.normal(0, 0.01, len(utility)), 0, 1)
 
             fig.add_trace(go.Scatter(
-                x=thresholds,
-                y=utility,
+                x=thresholds.tolist(),  # Convert numpy array to list for Plotly compatibility
+                y=utility.tolist(),
                 mode='lines',
                 name=model_name,
                 line=dict(width=2, color=model_colors.get(model_name, default_color)),
