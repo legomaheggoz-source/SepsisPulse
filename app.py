@@ -562,21 +562,28 @@ def render_dashboard():
     # Charts section
     st.markdown("### Performance Analysis")
 
+    # Import plotly for charts
+    import plotly.graph_objects as go
+
+    # Ensure we have metrics data - fall back to DEMO_METRICS if empty
+    chart_metrics = current_metrics if current_metrics else DEMO_METRICS
+
+    # Model colors with fallback for unknown models
+    model_colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
+    default_color = "#57606a"
+
     tab1, tab2, tab3 = st.tabs(["ROC Curves", "Lead Time Distribution", "Utility Over Time"])
 
     with tab1:
-        # Placeholder ROC curve
-        import plotly.graph_objects as go
-
+        # ROC Curves chart
         fig = go.Figure()
 
-        # ROC curves using current metrics (trained or demo)
         np.random.seed(42)
-        colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
-        for model_name, metrics in current_metrics.items():
+        for model_name, metrics in chart_metrics.items():
+            auc_value = metrics.get("auc", 0.75)
             fpr = np.linspace(0, 1, 100)
             # Generate plausible TPR based on AUC
-            tpr = 1 - (1 - fpr) ** (1 / (2 - metrics["auc"]))
+            tpr = 1 - (1 - fpr) ** (1 / (2 - auc_value))
             tpr = np.clip(tpr + np.random.normal(0, 0.02, len(tpr)), 0, 1)
             tpr = np.sort(tpr)
 
@@ -584,8 +591,8 @@ def render_dashboard():
                 x=fpr,
                 y=tpr,
                 mode='lines',
-                name=f"{model_name} (AUC={metrics['auc']:.2f})",
-                line=dict(width=2, color=colors[model_name]),
+                name=f"{model_name} (AUC={auc_value:.2f})",
+                line=dict(width=2, color=model_colors.get(model_name, default_color)),
             ))
 
         # Diagonal reference line
@@ -615,10 +622,11 @@ def render_dashboard():
         # Lead time distribution
         fig = go.Figure()
 
-        colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
-        for model_name, metrics in current_metrics.items():
+        np.random.seed(43)
+        for model_name, metrics in chart_metrics.items():
+            lead_time_value = metrics.get("lead_time", 5.0)
             # Generate plausible lead time distribution
-            lead_times = np.random.exponential(metrics["lead_time"], 200)
+            lead_times = np.random.exponential(lead_time_value, 200)
             lead_times = np.clip(lead_times, 0, 24)
 
             fig.add_trace(go.Histogram(
@@ -626,7 +634,7 @@ def render_dashboard():
                 name=model_name,
                 opacity=0.7,
                 nbinsx=24,
-                marker_color=colors[model_name],
+                marker_color=model_colors.get(model_name, default_color),
             ))
 
         fig.update_layout(
@@ -652,11 +660,11 @@ def render_dashboard():
         fig = go.Figure()
 
         thresholds = np.linspace(0.1, 0.9, 50)
-        colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
+        np.random.seed(44)
 
-        for model_name, metrics in current_metrics.items():
+        for model_name, metrics in chart_metrics.items():
             # Generate plausible utility curve
-            base = metrics["utility"]
+            base = metrics.get("utility", 0.35)
             utility = base * np.exp(-2 * (thresholds - 0.4) ** 2)
             utility = np.clip(utility + np.random.normal(0, 0.01, len(utility)), 0, 1)
 
@@ -665,7 +673,7 @@ def render_dashboard():
                 y=utility,
                 mode='lines',
                 name=model_name,
-                line=dict(width=2, color=colors[model_name]),
+                line=dict(width=2, color=model_colors.get(model_name, default_color)),
             ))
 
         fig.update_layout(
