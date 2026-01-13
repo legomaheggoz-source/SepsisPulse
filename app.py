@@ -568,6 +568,14 @@ def render_dashboard():
     # Ensure we have metrics data - fall back to DEMO_METRICS if empty
     chart_metrics = current_metrics if current_metrics else DEMO_METRICS
 
+    # Debug: Show chart metrics info (can be removed after debugging)
+    with st.expander("Chart Debug Info", expanded=False):
+        st.write(f"current_metrics type: {type(current_metrics)}, len: {len(current_metrics) if current_metrics else 0}")
+        st.write(f"chart_metrics type: {type(chart_metrics)}, len: {len(chart_metrics)}")
+        st.write(f"chart_metrics keys: {list(chart_metrics.keys()) if chart_metrics else 'None'}")
+        for name, m in chart_metrics.items():
+            st.write(f"  {name}: auc={m.get('auc', 'N/A')}, utility={m.get('utility', 'N/A')}, lead_time={m.get('lead_time', 'N/A')}")
+
     # Model colors with fallback for unknown models
     model_colors = {"qSOFA": "#6e7681", "XGBoost-TS": "#0966d2", "TFT-Lite": "#1a7f37"}
     default_color = "#57606a"
@@ -605,7 +613,7 @@ def render_dashboard():
         ))
 
         fig.update_layout(
-            title="ROC Curves - Model Comparison",
+            title=f"ROC Curves - Model Comparison ({len(fig.data)} traces)",
             xaxis_title="False Positive Rate",
             yaxis_title="True Positive Rate",
             template="plotly_white",
@@ -638,7 +646,7 @@ def render_dashboard():
             ))
 
         fig.update_layout(
-            title="Lead Time Distribution (hours before sepsis onset)",
+            title=f"Lead Time Distribution ({len(fig.data)} traces)",
             xaxis_title="Lead Time (hours)",
             yaxis_title="Count",
             template="plotly_white",
@@ -677,7 +685,7 @@ def render_dashboard():
             ))
 
         fig.update_layout(
-            title="Utility Score vs. Decision Threshold",
+            title=f"Utility Score vs. Decision Threshold ({len(fig.data)} traces)",
             xaxis_title="Prediction Threshold",
             yaxis_title="Clinical Utility Score",
             template="plotly_white",
